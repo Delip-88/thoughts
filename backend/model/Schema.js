@@ -23,12 +23,17 @@ export const typeDefs = `#graphql
         author:User!
         likes: [User!]     # likes by userId
         createdAt: String
+        image: Image
     }
-    type File{
-        filename: String!
-        mimetype: String!
-        encoding: String!
-        url: String!
+    type Image{
+        public_id: String
+        secure_url: String
+        asset_id: String
+        version: Int
+        format: String
+        width: Int
+        height: Int
+        created_at: String       
 
     }
     type Query{
@@ -68,6 +73,18 @@ export const typeDefs = `#graphql
         title: String!
         content: String!
         tags: [String!]!
+        image: ImageInput
+    }
+    input ImageInput{
+        public_id: String
+        secure_url: String
+        asset_id: String
+        version: Int
+        format: String
+        width: Int
+        height: Int
+        created_at: String       
+
     }
     input updateUser{
         id: ID!

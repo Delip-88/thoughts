@@ -14,6 +14,7 @@ const protectedRoute = async (context) => {
 
 // Define your resolvers
 const resolvers = {
+
   Query: {
     me: async (_, __, { req }) => {
       // Check if the user is authenticated
@@ -79,13 +80,15 @@ const resolvers = {
     
     async addPost(_, { post }, context) {
       const user = await protectedRoute(context);
-      const { title, content, tags } = post;
+
+      const { title, content, tags, image } = post;
 
       try {
         const newPost = new Post({
           title,
           content,
           tags,
+          image: image || null,
           author: user._id,
         });
     

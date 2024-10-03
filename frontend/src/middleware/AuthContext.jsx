@@ -2,10 +2,26 @@ import React, { createContext, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import LOGOUT_USER from "@/graphql/mutations/logoutGql";
 import ME_QUERY from "@/graphql/query/meGql";
+import { Cloudinary } from "@cloudinary/url-gen";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const cloudName = import.meta.env.VITE_CLOUD_NAME;
+  // const signeduploadFolder = "upload_test";
+  // const signeduploadPreset = import.meta.env.VITE_SIGNED_UPLOAD_PRESET;
+  const unsignedPreset = import.meta.env.VITE_UNSIGNED_UPLOAD_PRESET;
+  const unsignedUloadFolder = "unsigned_upload";
+
+
+  const cid = new Cloudinary({
+    cloud: {
+      cloudName: cloudName
+    }
+  })
+
+
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [logoutUser] = useMutation(LOGOUT_USER);
   const { data, loading, error } = useQuery(ME_QUERY);
@@ -44,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   const user = data?.me || null;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated,setIsAuthenticated ,loading, error, logout }}>
+    <AuthContext.Provider value={{cid,cloudName, user, isAuthenticated,setIsAuthenticated ,loading, error, logout }}>
       {children}
     </AuthContext.Provider>
   );

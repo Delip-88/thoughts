@@ -90,6 +90,16 @@ const postSchema = new mongoose.Schema({
     type: [String],
     required: [true, "Tags are required"]
   },
+  image: {
+    public_id: String,
+    secure_url: String,
+    asset_id: String,
+    version: Number,
+    format: String,
+    width: Number,
+    height: Number,
+    created_at: Date
+  },
   likes: [
     {
       type: mongoose.Schema.Types.ObjectId,

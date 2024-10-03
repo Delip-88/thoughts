@@ -9,16 +9,14 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "graphql": "^16.9.0",
-    "graphql-scalars": "^1.23.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "mailtrap": "^3.4.0",
     "mongoose": "^8.6.1"
   },
   "scripts": {
-    "start": "cross-env NODE_ENV=production node backend/server",
-    "dev": "cross-env NODE_ENV=development node --watch backend/server",
-    "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend"
+    "start": "node server",
+    "dev": "node --watch server"
   },
   "name": "reviews",
   "version": "1.0.0",
@@ -27,8 +25,5 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "type": "module",
-  "devDependencies": {
-    "cross-env": "^7.0.3"
-  }
+  "type": "module"
 }

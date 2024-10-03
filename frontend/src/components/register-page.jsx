@@ -6,6 +6,7 @@ import { useMutation } from '@apollo/client'
 import REGISTER_USER from '@/graphql/mutations/registerGql'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import Loader from './loader/Loader'
 
 const Input = React.forwardRef(({ className, type, icon: Icon, ...props }, ref) => {
   return (
@@ -129,7 +130,7 @@ export function RegisterPageJsx() {
     }
   };
   
-  
+  if(loading) return <Loader/>
 
   return (
     (<div className="flex flex-col min-h-screen">

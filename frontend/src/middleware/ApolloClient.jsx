@@ -1,12 +1,13 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
-// import { createUploadLink } from 'apollo-upload-client/createUploadLink.mjs';
-
 
 // Step 1: Create the HTTP link to your GraphQL server
 const httpLink = createHttpLink({
   uri: 'http://localhost:8000/graphql',
   credentials: 'include', // Include cookies in requests
 });
+
+
+
 
 // Step 2: Create the Apollo Client instance
 const client = new ApolloClient({
