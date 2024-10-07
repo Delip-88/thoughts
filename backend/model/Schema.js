@@ -48,7 +48,7 @@ export const typeDefs = `#graphql
         addUser(user: userInput!): User
         deleteUser(id: ID!): Response!
         addPost(post: postInput!): Response!
-        deletePost(id: ID!): Post
+        deletePost(id: ID!): Response!
         updateUser(user: updateUser!): User
         updatePost(post: updatePost!): Post
         login(usernameoremail: String!, password: String!): AuthPayload!
@@ -58,6 +58,12 @@ export const typeDefs = `#graphql
         resendCode(email: String!): Response!
         passwordReset(email: String!): Response!
         newPassword(token: String!, password: String!): Response!
+        getUploadSignature(tags: [String]!,upload_preset: String!, uploadFolder: String!): Signature!
+        getDeleteSignature(publicId: String!): Signature!
+    }
+    type Signature{
+        timestamp: Int!
+        signature: String!
     }
     type Response{
         message: String!

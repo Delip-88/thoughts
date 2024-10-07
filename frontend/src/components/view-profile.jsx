@@ -2,12 +2,15 @@
 
 import React, { useContext, useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { ArrowLeft, Mail, MapPin, Calendar, Edit } from 'lucide-react'
-import { useQuery } from '@apollo/client'
-import ABOUT_ME from '@/graphql/query/aboutMeGql'
+import { ArrowLeft, Mail, MapPin, Calendar, Edit, MoreVertical, Trash2 } from 'lucide-react'
+import { useMutation } from '@apollo/client'
 import { AuthContext } from '@/middleware/AuthContext'
+import DELETE_POST_BY_ID from '@/graphql/mutations/deletePostGql'
+import { toast } from 'react-toastify'
+import Loader from './loader/Loader'
+import FETCH_POSTS from '@/graphql/postsGql'
+import ME_QUERY from '@/graphql/query/meGql'
 
-// Button component remains unchanged
 const Button = ({
   children,
   variant = 'default',
@@ -29,27 +32,83 @@ const Button = ({
   )
 }
 
+const MoreOptions = ({ onDelete }) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1 rounded-full hover:bg-gray-200 transition-colors duration-200"
+        aria-label="More options"
+      >
+        <MoreVertical className="h-5 w-5 text-gray-500" />
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+            <button
+              onClick={() => {
+                onDelete()
+                setIsOpen(false)
+              }}
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              role="menuitem"
+            >
+              <Trash2 className="inline-block h-4 w-4 mr-2" />
+              Delete Post
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ViewProfile() {
   const [posts, setPosts] = useState([])
   const { user } = useContext(AuthContext)
 
-  const { data, error, loading } = useQuery(ABOUT_ME, {
-    variables: {
-      id: user._id
-    },
+  const [deletePost,{data: deleteData, error: deleteError, loading: deleteLoading}] = useMutation(DELETE_POST_BY_ID,{
+    refetchQueries: [{query: FETCH_POSTS},{query: ME_QUERY}],
+    awaitRefetchQueries: true,
   })
 
   useEffect(() => {
-    if (data?.user?.posts) {
-      setPosts(data.user.posts)
+    if (user) {
+      setPosts(user.posts)
     }
-  }, [data])
+  }, [user])
 
-  // Improved loading and error states
-  if (loading) return <div className="text-center mt-10">Loading profile...</div>
-  if (error) return <div className="text-center mt-10 text-red-500">Error: {error.message}</div>
+  const handleDeletePost =async (postId) => {
+    if(!confirm("Are you sure to delete this post ?")){
+      return ;
+    }
+    try {
+      const respose = await deletePost({
+        variables: {
+          id: postId
+        }
+      })
+
+      const {message, success} = await respose.data?.deletePost
+      
+      if(success){
+        toast.info(message)
+      }
+    } catch (err) {
+      console.error(err.message)
+    }
+
+    // After successful deletion, update the posts state
+    setPosts(posts.filter(post => post._id !== postId))
+  }
+
+  if (deleteError) return <div className="text-center mt-10 text-red-500">Error: {deleteError.message}</div>
 
   return (
+    <>
+    {deleteLoading &&  <Loader/>}
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
         <NavLink className="flex items-center justify-center" to="/Home">
@@ -102,16 +161,19 @@ export function ViewProfile() {
 
               {/* User Posts Section */}
               <div className="md:w-2/3">
-                <h2 className="text-2xl font-bold mb-4">Recent Posts</h2>
+                <h2 className="text-2xl font-bold mb-4">My Posts</h2>
                 <div className="space-y-6">
                   {posts.length > 0 ? posts.map((post) => (
-                    <div key={post._id} className="bg-white shadow rounded-lg p-6">
+                    <div key={post._id} className="bg-white shadow rounded-lg p-6 relative">
+                      <div className="absolute top-2 right-2">
+                        <MoreOptions onDelete={() => handleDeletePost(post._id)} />
+                      </div>
                       <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
                       <p className="text-gray-600 mb-4">{post.content}</p>
                       <div className="flex justify-between items-center text-sm text-gray-500">
                         <span>{new Date(parseInt(post.createdAt)).toLocaleDateString()}</span>
                         <div>
-                          <span className="mr-4">{post.likes?.length} {console.log(post.likes)}Likes</span>
+                          <span className="mr-4">{post.likes?.length} Likes</span>
                           {/* <span>{post.comments.length} Comments</span> */}
                         </div>
                       </div>
@@ -126,5 +188,6 @@ export function ViewProfile() {
         </section>
       </main>
     </div>
+                    </>
   )
 }

@@ -53,7 +53,7 @@ const Button = ({
 
 export function LoginPageJsx() {
   const navigate = useNavigate();
-  const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, setIsAuthenticated, setUser , refetch} = useContext(AuthContext);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -112,9 +112,14 @@ export function LoginPageJsx() {
       const { token, user } = response.data?.login || {};
 
       if (token && user) {
+
+        const {data: refetchedData} = await refetch()
+        setUser(refetchedData?.me)
         setIsAuthenticated(true)
-        navigate("/Home");
         toast.success("Logged in successfully!");
+        setTimeout(() => {
+          navigate("/Home");
+        }, 1000);
       } else {
         throw new Error("Login failed. Please try again.");
       }

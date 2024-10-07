@@ -8,6 +8,7 @@ import VERIFICATION_CODE from '@/graphql/mutations/verificationCodeGql'
 import { toast } from 'react-toastify'
 import Cookies from 'js-cookie'
 import RESEND_CODE from '@/graphql/mutations/resendCodeGql'
+import Loader from './loader/Loader'
 
 const Input = React.forwardRef(({ className, ...props }, ref) => {
   return (
@@ -119,11 +120,11 @@ export function RegisterVerificationPageJsx() {
         toast.error("An unexpected error occurred. Please try again.");
       }
     }
-    // Here you would typically call your backend to resend the verification code
   }
 
   return (
     (<div className="flex flex-col min-h-screen">
+      {resendLoading && <Loader/>}
       <header className="px-4 lg:px-6 h-14 flex items-center">
         <a className="flex items-center justify-center" href="#">
           <ArrowLeft className="h-6 w-6 mr-2" />
@@ -168,7 +169,7 @@ export function RegisterVerificationPageJsx() {
                 </form>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Didn't receive the code?{' '}
-                  <button onClick={handleResendCode} className="text-primary hover:underline">
+                  <button onClick={handleResendCode} disabled={resendLoading} className="text-primary hover:underline">
                     Resend Code
                   </button>
                 </p>

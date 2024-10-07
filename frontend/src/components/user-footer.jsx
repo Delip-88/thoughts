@@ -31,6 +31,9 @@ export function UserFooterComponent() {
   const { logout } = useContext(AuthContext);
 
   const handleLogout = async () => {
+    if(!confirm("Are you sure you want to log out?")){
+      return ;
+    }
     await logout();  // Clear the session
     navigate("/");   // Redirect to homepage
   };

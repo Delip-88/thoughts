@@ -18,6 +18,7 @@ import { EditProfilePageJsx } from "./components/edit-profile-page";
 import { ViewProfile } from "./components/view-profile";
 
 const App = () => {
+
   return (
     <Router>
       <ToastContainer />

@@ -9,6 +9,11 @@ import { toast } from "react-toastify";
 import { AuthContext } from "@/middleware/AuthContext";
 import FETCH_POSTS from "@/graphql/postsGql";
 import Loader from "./loader/Loader";
+import {
+  GET_DELETE_SIGNATURE,
+  GET_UPLOAD_SIGNATURE,
+} from "@/graphql/mutations/getSignature";
+import ME_QUERY from "@/graphql/query/meGql";
 
 const Input = React.forwardRef(({ className, type, label, ...props }, ref) => {
   return (
@@ -75,10 +80,20 @@ const Button = ({
 export function WriteNewPost() {
   const navigate = useNavigate();
   const { user, cloudName } = useContext(AuthContext);
-  const [createPost, { data, error, loading }] = useMutation(CREATE_POST, {
-    refetchQueries: [{ query: FETCH_POSTS }],
-    awaitRefetchQueries: true,
-  });
+  const [createPost, { data: cData, error: cError, loading: cLoading }] =
+    useMutation(CREATE_POST, {
+      refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
+
+      awaitRefetchQueries: true,
+    });
+  const [
+    getUploadSignature,
+    { data: sData, error: sError, loading: uLoading },
+  ] = useMutation(GET_UPLOAD_SIGNATURE);
+  const [
+    getDeleteSignature,
+    { data: dData, error: dError, loading: dLoading },
+  ] = useMutation(GET_DELETE_SIGNATURE);
   const [posting, setPosting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -169,36 +184,47 @@ export function WriteNewPost() {
   };
 
   const uploadImage = async (file) => {
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", import.meta.env.VITE_UNSIGNED_UPLOAD_PRESET);
-    data.append("folder", import.meta.env.VITE_UNSIGNED_UPLOAD_POST_IMAGE);
-    data.append("tags", formData.tags.join(","));
-
     try {
+      const res = await getUploadSignature({
+        variables: {
+          tags: formData.tags,
+          upload_preset: import.meta.env.VITE_SIGNED_UPLOAD_PRESET,
+          uploadFolder: import.meta.env.VITE_UPLOAD_POST_IMAGE_FOLDER,
+        },
+      });
+
+      const { timestamp, signature } = await res.data?.getUploadSignature;
+      const data = new FormData();
+      data.append("file", file);
+      data.append("api_key", import.meta.env.VITE_CLOUD_API_KEY);
+      data.append("upload_preset", import.meta.env.VITE_SIGNED_UPLOAD_PRESET);
+      data.append("folder", import.meta.env.VITE_UPLOAD_POST_IMAGE_FOLDER);
+      data.append("tags", formData.tags.join(","));
+      data.append("timestamp", timestamp);
+      data.append("signature", signature);
+
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: data,
-        }
+        { method: "POST", body: data }
       );
 
-      const result = await response.json();
-      return result;
+      if (!response.ok) throw new Error("Image upload failed");
+      return await response.json();
     } catch (err) {
-      console.error(`Error uploading image: ${err.message}`);
+      console.error(`Image upload failed: ${err.message}`);
+      toast.error("Image upload failed");
+      return null; // Return null if the upload fails
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     setPosting(true);
 
     if (validateForm()) {
       // console.log(formData);
-      const requiredImageProps = null;
+      let requiredImageProps = null;
       if (formData.image) {
         const imageProps = await uploadImage(formData.image);
 
@@ -213,6 +239,7 @@ export function WriteNewPost() {
           created_at: imageProps.created_at, // Date as a string
         };
       }
+
       try {
         const response = await createPost({
           variables: {
@@ -237,21 +264,37 @@ export function WriteNewPost() {
             tags: [],
             authorId: user._id,
           });
+          navigate("/Home"); // Navigate only after successful mutation
         }
         setPosting(false);
-        navigate("/Home");
       } catch (err) {
-        await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
-          {
-            method: "POST",
-            body: JSON.stringify({ public_id: requiredImageProps.public_id }),
-            headers: {
-              "Content-Type": "application/json",
+        if (formData.image && requiredImageProps) {
+          // Only delete the image if it was uploaded
+          const res = await getDeleteSignature({
+            variables: {
+              publicId: requiredImageProps.public_id,
             },
-          }
-        );
+          });
+          const { timestamp, signature } = await res.data?.getDeleteSignature;
 
+          await fetch(
+            `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                public_id: requiredImageProps.public_id,
+                api_key: import.meta.env.VITE_CLOUD_API_KEY,
+                timestamp,
+                signature,
+              }),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+
+        console.log("Error:", err);
         if (err.graphQLErrors?.[0]) {
           toast.error(err.graphQLErrors[0].message || "An error occurred.");
         } else if (err.networkError) {
@@ -265,7 +308,7 @@ export function WriteNewPost() {
     }
   };
 
-  if (loading) return <Loader />;
+  if (cLoading || uLoading || dLoading || dLoading) return <Loader />;
 
   return (
     <>
@@ -431,7 +474,11 @@ export function WriteNewPost() {
                         </p>
                       )}
                     </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={cLoading || uLoading || dLoading}
+                    >
                       <Send className="mr-2 h-4 w-4" />
                       Publish Post
                     </Button>

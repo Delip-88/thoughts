@@ -4,9 +4,9 @@ import React, { useContext, useEffect, useState } from "react";
 import { Bell, PenTool, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@apollo/client";
-import ME_QUERY from "@/graphql/query/meGql";
 import FETCH_POSTS from "@/graphql/postsGql";
-import { HashLoader } from "react-spinners";
+import { AuthContext } from "@/middleware/AuthContext";
+import Loader from "./loader/Loader";
 
 const Button = ({
   children,
@@ -32,43 +32,30 @@ const Button = ({
 };
 
 export function UserHomePageJsx() {
-  const {
-    data: meData,
-    loading: meLoading,
-    error: meError,
-  } = useQuery(ME_QUERY);
+
+  const {user} = useContext(AuthContext)
   const {
     data: postData,
     loading: postLoading,
     error: postError,
-  } = useQuery(FETCH_POSTS);
+  } = useQuery(FETCH_POSTS,{
+    fetchPolicy: 'network-only'
+  });
 
-  const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
   useEffect(() => {
-    if (meData) {
-      setUser(meData.me);
-    }
     if (postData) {
       setPosts(postData.posts);
     }
-  }, [meData, postData]);
+  }, [postData]);
   // console.log(posts);
 
-  if (meLoading || postLoading)
-    return <HashLoader color="#04e1ff" size={30} cssOverride={
-      {
-        position: "absolute",
-        display: "block",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%,-50%)",
-      }
-    } />;
-  if (meError) return <div>Error fetching User: {meError.message}</div>;
+  if (postLoading || !user)
+    return <Loader/>
+
+
   if (postError) return <div>Error fetching User: {postError.message}</div>;
-  if (!user) return <div>No user data available.</div>;
 
   return (
     <div className="flex flex-col min-h-screen">

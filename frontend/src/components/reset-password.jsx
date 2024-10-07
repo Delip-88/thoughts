@@ -5,6 +5,8 @@ import { ArrowLeft, Mail, ArrowRight } from 'lucide-react'
 import { useMutation } from '@apollo/client';
 import FORGOT_PASSWORD from '@/graphql/mutations/forgotPasswordGql';
 import { toast } from 'react-toastify';
+import { NavLink } from 'react-router-dom';
+import Loader from './loader/Loader';
 
 const Input = React.forwardRef(({ className, type, icon: Icon, label, ...props }, ref) => {
   return (
@@ -77,6 +79,7 @@ export function ResetPassword() {
         toast.info(message)
       }
     } catch (err) {
+      toast.error(err.message)
       console.error(err.message)
       throw new Error("Password reset Failed.")
     }
@@ -89,12 +92,15 @@ export function ResetPassword() {
   }
 
   return (
-    (<div className="flex flex-col min-h-screen">
+    (
+      
+    <div className="flex flex-col min-h-screen">
+      {loading && <Loader/>}
       <header className="px-4 lg:px-6 h-14 flex items-center">
-        <a className="flex items-center justify-center" href="#">
+        <NavLink className="flex items-center justify-center" to={"/login"}>
           <ArrowLeft className="h-6 w-6 mr-2" />
           <span className="text-lg font-semibold">Back to Login</span>
-        </a>
+        </NavLink>
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32">

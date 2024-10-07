@@ -2,7 +2,15 @@ import { User, Post } from "./mongoSchema.js"; // Import the actual models
 import { generateToken } from "../utils/token.js";
 import { sendEmail } from "../config/email_type.js";
 import jwt from "jsonwebtoken";
-import { getData, getDataById, deleteDataById, generateResetToken, setUserCookie } from "../utils/functions.js";
+import {
+  getData,
+  getDataById,
+  deleteDataById,
+  generateResetToken,
+  setUserCookie,
+  deleteSignature,
+  uploadSignature,
+} from "../utils/functions.js";
 
 const protectedRoute = async (context) => {
   const user = await resolvers.Query.checkAuth(null, null, context);
@@ -14,7 +22,6 @@ const protectedRoute = async (context) => {
 
 // Define your resolvers
 const resolvers = {
-
   Query: {
     me: async (_, __, { req }) => {
       // Check if the user is authenticated
@@ -77,7 +84,16 @@ const resolvers = {
   },
 
   Mutation: {
-    
+    async getUploadSignature(_, {tags, upload_preset,uploadFolder}, context) {
+      const user = await protectedRoute(context);
+
+      return uploadSignature(tags, upload_preset,uploadFolder);
+    },
+    async getDeleteSignature(_,{publicId},context){
+      const user = await protectedRoute(context);
+
+      return deleteSignature(publicId)
+    },
     async addPost(_, { post }, context) {
       const user = await protectedRoute(context);
 
@@ -91,25 +107,28 @@ const resolvers = {
           image: image || null,
           author: user._id,
         });
-    
+
         const savedPost = await newPost.save();
         await savedPost.populate({
-          path: 'author',
-          select: 'username',
+          path: "author",
+          select: "username",
         });
-    
+
         await User.findByIdAndUpdate(
           user._id,
           { $push: { posts: savedPost._id } },
           { new: true }
         );
-    
-        return { message: 'Post successfully created!', success: true };
+
+        console.log("post created")
+
+        return { message: "Post successfully created!", success: true };
       } catch (err) {
-        console.error('Failed to create post:', err.message);
-        throw new Error('Error creating post');
+        console.error("Failed to create post:", err.message);
+        throw new Error("Error creating post");
       }
     },
+
 
     async updateUser(_, { user }, context) {
       const loggedUser = await protectedRoute(context);
@@ -167,33 +186,38 @@ const resolvers = {
     async register(_, { user }) {
       const { username, email, password } = user;
       try {
-        const existingUser = await User.findOne({ 
-          $or: [{username}, {email}]
-         });
-        if (existingUser) {
-          throw new Error("Aready in use.");
+        // Check if the username is already in use
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+          throw new Error("Username is already in use.");
         }
+    
+        // Check if the email is already in use
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+          throw new Error("Email is already in use.");
+        }
+    
         // Generate a random 6-digit verification code
         const randTokenGenerate = Math.floor(
           100000 + Math.random() * 900000
         ).toString();
-
+    
         const newUser = new User({
           username,
           email,
           password,
           verificationToken: randTokenGenerate.toString(),
           verificationTokenExpiresAt: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
+            Date.now() +  15 * 60 * 1000
           ).toISOString(),
         });
-
+    
         await newUser.save();
-        // console.log("New user:", newUser);
         console.log(
           `Sending verification email to: ${newUser.email} with code: ${randTokenGenerate}`
         );
-
+    
         await sendEmail(
           "email_verification",
           newUser.email,
@@ -201,7 +225,7 @@ const resolvers = {
           randTokenGenerate
         );
         return {
-          message: "Email verification sended",
+          message: "Email verification sent",
           success: true,
         };
       } catch (err) {
@@ -209,6 +233,7 @@ const resolvers = {
         throw new Error(err.message);
       }
     },
+    
     async resendCode(_, { email }) {
       try {
         const user = await User.findOne({ email });
@@ -220,14 +245,19 @@ const resolvers = {
           100000 + Math.random() * 900000
         ).toString();
 
-        user.verificationToken = randTokenGenerate
-        await user.save()
+        user.verificationToken = randTokenGenerate;
+        await user.save();
 
-        sendEmail("email_verification",email,"Email Verification",randTokenGenerate)
-        return {message: "Verification code sended", success: true}
+        sendEmail(
+          "email_verification",
+          email,
+          "Email Verification",
+          randTokenGenerate
+        );
+        return { message: "Verification code sended", success: true };
       } catch (err) {
-        console.error("Failed to send code,", err.message)
-        throw new Error(err.message)
+        console.error("Failed to send code,", err.message);
+        throw new Error(err.message);
       }
     },
     async verifyUser(_, { email, code }, context) {
@@ -340,6 +370,7 @@ const resolvers = {
         user.password = password;
         user.resetToken = undefined;
         user.resetTokenExpiresAt = undefined;
+        user.expiresAt = undefined;
         await user.save();
 
         // Generate a new token for the user (if you want to log them in immediately)
@@ -367,37 +398,34 @@ const resolvers = {
     async login(_, { usernameoremail, password }, context) {
       try {
         // Find user by either username or email
-        const user = await User.findOne({ 
-          $or: [{ username: usernameoremail }, { email: usernameoremail }]
+        const user = await User.findOne({
+          $or: [{ username: usernameoremail }, { email: usernameoremail }],
         });
-    
+
         if (!user) {
           throw new Error("Invalid credentials");
         }
-    
+
         // Check if the provided password matches the stored one
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
           throw new Error("Invalid credentials");
         }
-    
+
         // Generate a token for the user
         const token = generateToken(user);
-    
+
         // Set the token in an http-only cookie
         setUserCookie(token, context);
-    
+
         // Return the user data without the password
         const returnuser = { ...user.toObject(), password: undefined };
         return { token, user: returnuser };
-    
       } catch (err) {
         console.error("Error logging in:", err.message);
         throw new Error(err.message);
       }
-    }
-    ,
-
+    },
     async logout(parameter, args, { res }) {
       res.clearCookie("authToken", {
         httpOnly: true,

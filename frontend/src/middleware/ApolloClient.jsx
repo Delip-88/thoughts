@@ -6,9 +6,6 @@ const httpLink = createHttpLink({
   credentials: 'include', // Include cookies in requests
 });
 
-
-
-
 // Step 2: Create the Apollo Client instance
 const client = new ApolloClient({
   link: httpLink,
