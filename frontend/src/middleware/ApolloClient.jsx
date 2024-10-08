@@ -1,8 +1,13 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 
+const apiUrl = import.meta.env.VITE_MODE === 'development' 
+  ? import.meta.env.VITE_GRAPHQL_API_URL 
+  : '/graphql'; // Use relative path in production
+
+
 // Step 1: Create the HTTP link to your GraphQL server
 const httpLink = createHttpLink({
-  uri: import.meta.env.VITE_GRAPHQL_API_URL,
+  uri: apiUrl,
   credentials: 'include', // Include cookies in requests
 });
 
