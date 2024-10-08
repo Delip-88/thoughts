@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useContext, useEffect, useState } from "react";
-import { Bell, PenTool, User } from "lucide-react";
+import { Bell, PenTool, User ,Heart} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import FETCH_POSTS from "@/graphql/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
 import Loader from "./loader/Loader";
+import PostTime from "@/utils/PostTime";
 
 const Button = ({
   children,
@@ -74,40 +75,87 @@ export function UserHomePageJsx() {
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100 dark:bg-gray-800">
-          <div className="container px-4 md:px-6 mx-auto">
-            <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl mb-8">
-              Recent Blog Posts
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6 mx-auto max-w-3xl">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8 animate-fadeInUp text-gray-800 dark:text-white">
+              Featured Posts
             </h2>
-            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-              {posts.length === 0 && !postLoading && (
-                <div>No posts available.</div>
-              )}
-              {posts.map((post) => (
-                <div
-                  key={post._id}
-                  className="flex flex-col items-start gap-4 bg-white dark:bg-gray-900 p-6 rounded-lg shadow-md"
-                >
-                  <h2 className="text-2xl ">{post.author.username}</h2>
-                  <h3 className="text-xl font-bold">{post.title}</h3>
-                  <span>
-                    {post.tags?.map((tag, index) => (
-                      <p
-                        key={index}
-                        className="p-1 text-sm inline mr-1 w-fit bg-gray-500 rounded text-white"
-                      >
-                        {tag}
-                      </p>
-                    ))}
-                  </span>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {post.content}
-                  </p>
-                  <Button variant="link" className="mt-auto">
-                    Read More
-                  </Button>
+            <div className="space-y-10">
+              {posts.length === 0 ? (
+                <div className="text-center text-gray-600 dark:text-gray-400">
+                  No posts available.
                 </div>
-              ))}
+              ) : (
+                posts.map((post, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col items-start gap-4 animate-fadeInUp bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-102"
+                    style={{ animationDelay: `${i * 200}ms` }}
+                  >
+                    <div className="w-full">
+                      <div className="flex items-center">
+                        {post.author.image ? (
+                          <img
+                            src={post.author.image.secure_url}
+                            alt={post.author.username}
+                          />
+                        ) : (
+                          <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center">
+                            {post.author.username[0].toUpperCase()}
+                          </p>
+                        )}
+                        <div className="ml-3">
+                          <h3 className="font-semibold text-gray-800 dark:text-white">
+                            {post.author?.username || "Anonymous"}
+                          </h3>
+                          <PostTime createdAt={post.createdAt} />
+                        </div>
+                      </div>
+                      <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
+                        {post.title}
+                      </h4>
+                      {post.image && post.image.secure_url && (
+                        <img
+                          alt="Blog post image"
+                          className="w-full h-64 object-cover rounded-lg mb-4"
+                          src={post.image.secure_url}
+                        />
+                      )}
+                      <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
+                        {post.content}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {post.tags?.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="relative">
+                          <Button
+                            variant="link"
+                            className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                          >
+                            Read More
+                          </Button>
+                        </div>
+
+                        <button
+                          className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors duration-200"
+                          aria-label={`Like this post. Current likes: ${post.likes}`}
+                        >
+                          <Heart className="h-5 w-5" />
+                          <span>{post.likes}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>

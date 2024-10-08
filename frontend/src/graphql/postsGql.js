@@ -7,6 +7,10 @@ const FETCH_POSTS = gql`
       title
       content
       tags
+      image{
+        public_id
+        secure_url
+      }
       createdAt
       author {
         username
