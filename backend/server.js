@@ -12,7 +12,6 @@ import { authenticate } from "./middleware/authenticate.js";
 import path from "path";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-
 import { v2 as cloudinary } from "cloudinary";
 
 dotenv.config();
@@ -22,37 +21,29 @@ const port = process.env.PORT || 5000;
 
 // Middleware setup
 app.use(cookieParser());
+app.use(helmet()); // Security headers
 
-
-// app.use(helmet()); // Security headers
-
-// // Rate Limiting Middleware for basic protection
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // Limit each IP to 100 requests per window
-// });
-// app.use(limiter);
+// Rate Limiting Middleware for basic protection
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+});
+app.use(limiter);
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_API_SECRET
-})
-
-console.log(cloudinary.config())
-
-
+});
 
 // CORS configuration with environment-based origin control
 const corsOptions = {
-  origin: ["http://localhost:5173", "https://sandbox.apollo.dev"],
+  origin: [process.env.CLIENT_URL, "https://sandbox.apollo.dev"],
   credentials: true,
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
-
 app.use(cors(corsOptions));
-console.log("CORS middleware applied");
 
 // Create Apollo Server
 const server = new ApolloServer({
@@ -79,7 +70,6 @@ const startServer = async () => {
       },
     })
   );
-  console.log("Apollo middleware applied");
 
   app.listen(port, () => {
     console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
