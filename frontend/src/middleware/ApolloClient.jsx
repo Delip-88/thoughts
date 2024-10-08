@@ -2,7 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
 
 const apiUrl = import.meta.env.VITE_MODE === 'development' 
   ? import.meta.env.VITE_GRAPHQL_API_URL 
-  : 'https://thoughts-ze7l.onrender.com'; // Use relative path in production
+  : 'https://thoughts-ze7l.onrender.com/graphql'; // Use relative path in production
 
 
 // Step 1: Create the HTTP link to your GraphQL server
