@@ -16,8 +16,8 @@
     "mongoose": "^8.6.1"
   },
   "scripts": {
-    "start": "node server",
-    "dev": "node --watch server"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "name": "reviews",
   "version": "1.0.0",
