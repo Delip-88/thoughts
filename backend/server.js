@@ -9,28 +9,14 @@ import resolvers from "./model/resolver.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { authenticate } from "./middleware/authenticate.js";
-import path from "path";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { v2 as cloudinary } from "cloudinary";
-import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
-
-
-// Serve static files from the 'dist' folder (after build)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
-
-// Handle any other routes (fallback for React)
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '..', 'frontend', 'dist', 'index.html'));
-});
 
 // Middleware setup
 app.use(cookieParser());
