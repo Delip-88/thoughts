@@ -136,10 +136,12 @@ export function ViewProfile() {
                         <Mail className="mr-2 h-4 w-4" />
                         Message
                       </Button>
-                      <Button>
+                      <NavLink to={"/edit-profile"}>
+                      <Button >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Profile
                       </Button>
+                      </NavLink>
                     </div>
                   </div>
                   <div className="mt-6">
@@ -149,11 +151,12 @@ export function ViewProfile() {
                     </div>
                     <div className="flex items-center justify-center gap-2 mt-2">
                       <MapPin className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-600">{user.location || 'Unknown location'}</span>
+                      <span className="text-gray-600">{user.location || 'Home'}</span>
                     </div>
                     <div className="flex items-center justify-center gap-2 mt-2">
                       <Calendar className="h-4 w-4 text-gray-600" />
                       <span className="text-gray-600">Joined {new Date(parseInt(user.createdAt)).toLocaleDateString()}</span>
+                      {console.log(user.createdAt)}
                     </div>
                   </div>
                 </div>

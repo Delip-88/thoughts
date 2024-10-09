@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef } from "react";
 import { ArrowLeft, Send, Image as ImageIcon, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useMutation } from "@apollo/client";
 import CREATE_POST from "@/graphql/mutations/newPostGql";
 import { toast } from "react-toastify";
 import { AuthContext } from "@/middleware/AuthContext";
+import { ThemeContext } from "@/middleware/ThemeContext";
 import FETCH_POSTS from "@/graphql/postsGql";
 import Loader from "./loader/Loader";
 import {
@@ -16,17 +17,22 @@ import {
 import ME_QUERY from "@/graphql/query/meGql";
 
 const Input = React.forwardRef(({ className, type, label, ...props }, ref) => {
+  const { isDarkMode } = useContext(ThemeContext);
   return (
     <div className="w-full">
       <label
-        className="text-sm font-medium text-gray-700 mb-1 block"
+        className={`text-sm font-medium mb-1 block ${
+          isDarkMode ? "text-gray-200" : "text-gray-700"
+        }`}
         htmlFor={props.id}
       >
         {label}
       </label>
       <input
         type={type}
-        className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+        className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+          isDarkMode ? "text-gray-200" : "text-gray-900"
+        } ${className}`}
         ref={ref}
         {...props}
       />
@@ -36,16 +42,21 @@ const Input = React.forwardRef(({ className, type, label, ...props }, ref) => {
 Input.displayName = "Input";
 
 const Textarea = React.forwardRef(({ className, label, ...props }, ref) => {
+  const { isDarkMode } = useContext(ThemeContext);
   return (
     <div className="w-full">
       <label
-        className="text-sm font-medium text-gray-700 mb-1 block"
+        className={`text-sm font-medium mb-1 block ${
+          isDarkMode ? "text-gray-200" : "text-gray-700"
+        }`}
         htmlFor={props.id}
       >
         {label}
       </label>
       <textarea
-        className={`flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+        className={`flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+          isDarkMode ? "text-gray-200" : "text-gray-900"
+        } ${className}`}
         ref={ref}
         {...props}
       />
@@ -80,10 +91,10 @@ const Button = ({
 export function WriteNewPost() {
   const navigate = useNavigate();
   const { user, cloudName } = useContext(AuthContext);
+  const { isDarkMode } = useContext(ThemeContext);
   const [createPost, { data: cData, error: cError, loading: cLoading }] =
     useMutation(CREATE_POST, {
       refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
-
       awaitRefetchQueries: true,
     });
   const [
@@ -109,6 +120,8 @@ export function WriteNewPost() {
     tags: "",
   });
   const [currentTag, setCurrentTag] = useState("");
+  const [previewImage, setPreviewImage] = useState(null);
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -133,6 +146,7 @@ export function WriteNewPost() {
         ...prevErrors,
         image: "",
       }));
+      setPreviewImage(URL.createObjectURL(file));
     }
   };
 
@@ -170,10 +184,6 @@ export function WriteNewPost() {
       newErrors.content = "Content is required";
       isValid = false;
     }
-    // if (!formData.image) {
-    //   newErrors.image = 'Featured image is required'
-    //   isValid = false
-    // }
     if (formData.tags.length === 0) {
       newErrors.tags = "At least one tag is required";
       isValid = false;
@@ -213,7 +223,7 @@ export function WriteNewPost() {
     } catch (err) {
       console.error(`Image upload failed: ${err.message}`);
       toast.error("Image upload failed");
-      return null; // Return null if the upload fails
+      return null;
     }
   };
 
@@ -223,7 +233,6 @@ export function WriteNewPost() {
     setPosting(true);
 
     if (validateForm()) {
-      // console.log(formData);
       let requiredImageProps = null;
       if (formData.image) {
         const imageProps = await uploadImage(formData.image);
@@ -232,11 +241,11 @@ export function WriteNewPost() {
           public_id: imageProps.public_id,
           secure_url: imageProps.secure_url,
           asset_id: imageProps.asset_id,
-          version: parseInt(imageProps.version, 10), // Ensure this is an integer
+          version: parseInt(imageProps.version, 10),
           format: imageProps.format,
-          width: parseInt(imageProps.width, 10), // Convert to integer
-          height: parseInt(imageProps.height, 10), // Convert to integer
-          created_at: imageProps.created_at, // Date as a string
+          width: parseInt(imageProps.width, 10),
+          height: parseInt(imageProps.height, 10),
+          created_at: imageProps.created_at,
         };
       }
 
@@ -264,12 +273,12 @@ export function WriteNewPost() {
             tags: [],
             authorId: user._id,
           });
-          navigate("/Home"); // Navigate only after successful mutation
+          setPreviewImage(null);
+          navigate("/Home");
         }
         setPosting(false);
       } catch (err) {
         if (formData.image && requiredImageProps) {
-          // Only delete the image if it was uploaded
           const res = await getDeleteSignature({
             variables: {
               publicId: requiredImageProps.public_id,
@@ -313,7 +322,7 @@ export function WriteNewPost() {
   return (
     <>
       {posting && <Loader />}
-      <div className="flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen ${isDarkMode ? "bg-gray-900 text-gray-200" : "bg-white text-gray-900"}`}>
         <header className="px-4 lg:px-6 h-14 flex items-center">
           <NavLink className="flex items-center justify-center" to="/Home">
             <ArrowLeft className="h-6 w-6 mr-2" />
@@ -328,7 +337,7 @@ export function WriteNewPost() {
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                     Write a New Post
                   </h1>
-                  <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
+                  <p className={`mx-auto max-w-[700px] ${isDarkMode ? "text-gray-400" : "text-gray-500"} md:text-xl`}>
                     Share your thoughts and ideas with the world
                   </p>
                 </div>
@@ -345,16 +354,10 @@ export function WriteNewPost() {
                         value={formData.title}
                         onChange={handleChange}
                         aria-invalid={errors.title ? "true" : "false"}
-                        aria-describedby={
-                          errors.title ? "title-error" : undefined
-                        }
+                        aria-describedby={errors.title ? "title-error" : undefined}
                       />
                       {errors.title && (
-                        <p
-                          id="title-error"
-                          className="mt-2 text-sm text-red-600"
-                          role="alert"
-                        >
+                        <p id="title-error" className="mt-2 text-sm text-red-600" role="alert">
                           {errors.title}
                         </p>
                       )}
@@ -366,16 +369,10 @@ export function WriteNewPost() {
                         value={formData.content}
                         onChange={handleChange}
                         aria-invalid={errors.content ? "true" : "false"}
-                        aria-describedby={
-                          errors.content ? "content-error" : undefined
-                        }
+                        aria-describedby={errors.content ? "content-error" : undefined}
                       />
                       {errors.content && (
-                        <p
-                          id="content-error"
-                          className="mt-2 text-sm text-red-600"
-                          role="alert"
-                        >
+                        <p id="content-error" className="mt-2 text-sm text-red-600" role="alert">
                           {errors.content}
                         </p>
                       )}
@@ -383,43 +380,53 @@ export function WriteNewPost() {
                     <div className="space-y-4">
                       <h2 className="text-xl font-semibold">Featured Image</h2>
                       <div className="w-full">
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                          <div className="space-y-1 text-center">
-                            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                            <div className="flex text-sm text-gray-600">
-                              <label
-                                htmlFor="image"
-                                className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary"
-                              >
-                                <span>Upload a file</span>
-                                <input
-                                  id="image"
-                                  name="image"
-                                  type="file"
-                                  className="sr-only"
-                                  onChange={handleImageChange}
-                                  accept="image/*"
-                                />
-                              </label>
-                              <p className="pl-1">or drag and drop</p>
+                        <div 
+                          className={`mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+                            isDarkMode ? "border-gray-600" : "border-gray-300"
+                          } ${previewImage ? 'h-64' : ''}`}
+                          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        >
+                          {previewImage ? (
+                            <img
+                              src={previewImage}
+                              alt="Selected preview"
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          ) : (
+                            <div className="space-y-1 text-center">
+                              <ImageIcon className={`mx-auto h-12 w-12 ${isDarkMode ? "text-gray-400" : "text-gray-400"}`} />
+                              <div className={`flex text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+                                <label
+                                  htmlFor="image"
+                                  className={`relative cursor-pointer bg-transparent rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary`}
+                                >
+                                  <span>Upload a file</span>
+                                  <input
+                                    id="image"
+                                    name="image"
+                                    type="file"
+                                    className="sr-only"
+                                    onChange={handleImageChange}
+                                    accept="image/*"
+                                    ref={fileInputRef}
+                                  />
+                                </label>
+                                <p className="pl-1">or drag and drop</p>
+                              </div>
+                              <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                                PNG, JPG, GIF up to 10MB
+                              </p>
                             </div>
-                            <p className="text-xs text-gray-500">
-                              PNG, JPG, GIF up to 10MB
-                            </p>
-                          </div>
+                          )}
                         </div>
                         {formData.image && (
-                          <p className="mt-2 text-sm text-gray-500">
+                          <p className={`mt-2 text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                             Selected file: {formData.image.name}
                           </p>
                         )}
                       </div>
                       {errors.image && (
-                        <p
-                          id="image-error"
-                          className="mt-2 text-sm text-red-600"
-                          role="alert"
-                        >
+                        <p id="image-error" className="mt-2 text-sm text-red-600" role="alert">
                           {errors.image}
                         </p>
                       )}
@@ -465,11 +472,7 @@ export function WriteNewPost() {
                         ))}
                       </div>
                       {errors.tags && (
-                        <p
-                          id="tags-error"
-                          className="mt-2 text-sm text-red-600"
-                          role="alert"
-                        >
+                        <p id="tags-error" className="mt-2 text-sm text-red-600" role="alert">
                           {errors.tags}
                         </p>
                       )}

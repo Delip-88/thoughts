@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ArrowLeft, User, Mail, Lock, Camera } from 'lucide-react'
-import { NavLink } from 'react-router-dom';
+import { ArrowLeft, User, MapPin, FileText, Camera } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
 
 const Input = React.forwardRef(({ className, type, icon: Icon, label, ...props }, ref) => {
   return (
-    (<div className="relative">
+    <div className="relative">
       <label
         className="text-sm font-medium text-gray-700 mb-1 block"
         htmlFor={props.id}>
@@ -20,10 +20,30 @@ const Input = React.forwardRef(({ className, type, icon: Icon, label, ...props }
         className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${Icon ? 'pl-10' : 'pl-3'} ${className}`}
         ref={ref}
         {...props} />
-    </div>)
-  );
+    </div>
+  )
 })
 Input.displayName = 'Input'
+
+const Textarea = React.forwardRef(({ className, icon: Icon, label, ...props }, ref) => {
+  return (
+    <div className="relative">
+      <label
+        className="text-sm font-medium text-gray-700 mb-1 block"
+        htmlFor={props.id}>
+        {label}
+      </label>
+      {Icon && <Icon
+        className="absolute left-3 top-[34px] transform -translate-y-1/2 text-gray-400"
+        size={18} />}
+      <textarea
+        className={`flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${Icon ? 'pl-10' : 'pl-3'} ${className}`}
+        ref={ref}
+        {...props} />
+    </div>
+  )
+})
+Textarea.displayName = 'Textarea'
 
 const Button = ({ children, variant = 'default', className = '', ...props }) => {
   const baseStyles = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background'
@@ -33,20 +53,19 @@ const Button = ({ children, variant = 'default', className = '', ...props }) => 
     link: 'underline-offset-4 hover:underline text-primary',
   }
   return (
-    (<button
+    <button
       className={`${baseStyles} ${variantStyles[variant]} ${className} px-4 py-2`}
       {...props}>
       {children}
-    </button>)
-  );
+    </button>
+  )
 }
 
 export function EditProfilePageJsx() {
   const [formData, setFormData] = useState({
     username: 'johndoe',
-    email: 'johndoe@example.com',
-    password: '',
-    confirmPassword: '',
+    address: '',
+    bio: '',
   })
   const [profilePic, setProfilePic] = useState('/placeholder.svg?height=128&width=128')
   const [errors, setErrors] = useState({})
@@ -79,19 +98,10 @@ export function EditProfilePageJsx() {
   const validateForm = () => {
     const newErrors = {}
     if (!formData.username.trim()) newErrors.username = 'Username is required'
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid'
-    }
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
-    }
+    if (!formData.address.trim()) newErrors.address = 'Address is required'
+    if (!formData.bio.trim()) newErrors.bio = 'Bio is required'
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = (e) => {
@@ -104,7 +114,7 @@ export function EditProfilePageJsx() {
   }
 
   return (
-    (<div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center">
         <NavLink className="flex items-center justify-center" to="/Home">
           <ArrowLeft className="h-6 w-6 mr-2" />
@@ -162,49 +172,32 @@ export function EditProfilePageJsx() {
                     <p id="username-error" className="mt-2 text-sm text-red-600" role="alert">{errors.username}</p>
                   )}
                   <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    label="Email"
-                    placeholder="Enter your email address"
-                    value={formData.email}
+                    id="address"
+                    name="address"
+                    type="text"
+                    label="Address"
+                    placeholder="Enter your address"
+                    value={formData.address}
                     onChange={handleChange}
-                    aria-invalid={errors.email ? "true" : "false"}
-                    aria-describedby={errors.email ? "email-error" : undefined}
-                    icon={Mail} />
-                  {errors.email && (
-                    <p id="email-error" className="mt-2 text-sm text-red-600" role="alert">{errors.email}</p>
+                    aria-invalid={errors.address ? "true" : "false"}
+                    aria-describedby={errors.address ? "address-error" : undefined}
+                    icon={MapPin} />
+                  {errors.address && (
+                    <p id="address-error" className="mt-2 text-sm text-red-600" role="alert">{errors.address}</p>
                   )}
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    label="New Password"
-                    placeholder="Enter new password (optional)"
-                    value={formData.password}
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    label="Bio"
+                    placeholder="Tell us about yourself"
+                    value={formData.bio}
                     onChange={handleChange}
-                    aria-invalid={errors.password ? "true" : "false"}
-                    aria-describedby={errors.password ? "password-error" : undefined}
-                    icon={Lock} />
-                  {errors.password && (
-                    <p id="password-error" className="mt-2 text-sm text-red-600" role="alert">{errors.password}</p>
-                  )}
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    label="Confirm New Password"
-                    placeholder="Confirm new password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    aria-invalid={errors.confirmPassword ? "true" : "false"}
-                    aria-describedby={errors.confirmPassword ? "confirmPassword-error" : undefined}
-                    icon={Lock} />
-                  {errors.confirmPassword && (
-                    <p
-                      id="confirmPassword-error"
-                      className="mt-2 text-sm text-red-600"
-                      role="alert">{errors.confirmPassword}</p>
+                    aria-invalid={errors.bio ? "true" : "false"}
+                    aria-describedby={errors.bio ? "bio-error" : undefined}
+                    icon={FileText}
+                    rows={4} />
+                  {errors.bio && (
+                    <p id="bio-error" className="mt-2 text-sm text-red-600" role="alert">{errors.bio}</p>
                   )}
                   <Button type="submit" className="w-full">
                     Save Changes
@@ -215,6 +208,6 @@ export function EditProfilePageJsx() {
           </div>
         </section>
       </main>
-    </div>)
-  );
+    </div>
+  )
 }

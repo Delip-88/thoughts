@@ -17,6 +17,7 @@ const ME_QUERY = gql`
             }
         }
         _id
+        createdAt
     }
   }
 `;
