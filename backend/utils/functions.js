@@ -91,13 +91,15 @@ const deleteImage = async (publicId) => {
 };
 
 export const uploadSignature = async (tags, upload_preset, uploadFolder) => {
+
   const timestamp = Math.round(new Date().getTime() / 1000);
 
   const paramsToSign = {
     timestamp: timestamp,
     folder: uploadFolder,
-    tags: tags,
     upload_preset: upload_preset,
+    tags: tags || undefined,
+
   };
 
   //Generate the signature

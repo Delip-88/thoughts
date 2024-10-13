@@ -5,6 +5,13 @@ const ME_QUERY = gql`
     me {
         username
         email
+        address
+        bio
+        image{
+          secure_url
+          public_id
+          
+        }
         posts {
             _id
             title

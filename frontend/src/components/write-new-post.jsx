@@ -8,7 +8,7 @@ import CREATE_POST from "@/graphql/mutations/newPostGql";
 import { toast } from "react-toastify";
 import { AuthContext } from "@/middleware/AuthContext";
 import { ThemeContext } from "@/middleware/ThemeContext";
-import FETCH_POSTS from "@/graphql/postsGql";
+import FETCH_POSTS from "@/graphql/query/postsGql";
 import Loader from "./loader/Loader";
 import {
   GET_DELETE_SIGNATURE,
@@ -204,6 +204,7 @@ export function WriteNewPost() {
       });
 
       const { timestamp, signature } = await res.data?.getUploadSignature;
+      
       const data = new FormData();
       data.append("file", file);
       data.append("api_key", import.meta.env.VITE_CLOUD_API_KEY);
@@ -235,17 +236,17 @@ export function WriteNewPost() {
     if (validateForm()) {
       let requiredImageProps = null;
       if (formData.image) {
-        const imageProps = await uploadImage(formData.image);
+        const imageData = await uploadImage(formData.image);
 
         requiredImageProps = {
-          public_id: imageProps.public_id,
-          secure_url: imageProps.secure_url,
-          asset_id: imageProps.asset_id,
-          version: parseInt(imageProps.version, 10),
-          format: imageProps.format,
-          width: parseInt(imageProps.width, 10),
-          height: parseInt(imageProps.height, 10),
-          created_at: imageProps.created_at,
+          public_id: imageData.public_id,
+          secure_url: imageData.secure_url,
+          asset_id: imageData.asset_id,
+          version: parseInt(imageData.version, 10),
+          format: imageData.format,
+          width: parseInt(imageData.width, 10),
+          height: parseInt(imageData.height, 10),
+          created_at: imageData.created_at,
         };
       }
 

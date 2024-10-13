@@ -13,6 +13,22 @@ const userSchema = new mongoose.Schema({
     required: [true, "Email is required"],
     unique: true, // Unique constraint for email
   },
+  address: {
+    type: String
+  },
+  bio: {
+    type: String
+  },
+  image: {
+    public_id: String,
+    secure_url: String,
+    asset_id: String,
+    version: Number,
+    format: String,
+    width: Number,
+    height: Number,
+    created_at: Date
+  },
   password: {
     type: String,
     required: [true, "Password is required"],

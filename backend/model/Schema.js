@@ -5,6 +5,9 @@ export const typeDefs = `#graphql
         email: String!      # Non-nullable email
         password: String!   # Non-nullable password
         posts: [Post!]!     # Non-nullable array of non-nullable posts
+        address: String
+        bio: String
+        image: Image
         verified: Boolean!  # Non-nullable verified field
         verificationToken: String
         verificationTokenExpiresAt: String
@@ -49,7 +52,7 @@ export const typeDefs = `#graphql
         deleteUser(id: ID!): Response!
         addPost(post: postInput!): Response!
         deletePost(id: ID!): Response!
-        updateUser(user: updateUser!): User
+        updateUser(user: updateUser!): Response!
         updatePost(post: updatePost!): Post
         login(usernameoremail: String!, password: String!): AuthPayload!
         logout: Response!
@@ -58,7 +61,7 @@ export const typeDefs = `#graphql
         resendCode(email: String!): Response!
         passwordReset(email: String!): Response!
         newPassword(token: String!, password: String!): Response!
-        getUploadSignature(tags: [String]!,upload_preset: String!, uploadFolder: String!): Signature!
+        getUploadSignature(tags: [String],upload_preset: String!, uploadFolder: String!): Signature!
         getDeleteSignature(publicId: String!): Signature!
     }
     type Signature{
@@ -93,13 +96,14 @@ export const typeDefs = `#graphql
 
     }
     input updateUser{
-        id: ID!
-        email: String!
+        _id: ID!
         username: String!
-        password: String!
+        address: String
+        bio: String
+        image: ImageInput
     }
     input updatePost{
-        id: ID!
+        _id: ID!
         title: String!
         content: String!
     }

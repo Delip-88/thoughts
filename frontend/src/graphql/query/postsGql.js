@@ -14,6 +14,10 @@ const FETCH_POSTS = gql`
       createdAt
       author {
         username
+        image{
+          public_id
+          secure_url
+        }
       }
     }
   }

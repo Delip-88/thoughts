@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useContext } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, PenTool, Bell, User, Menu, X, LogOut, Sun, Moon, ChevronDown } from 'lucide-react'
+import { BookOpen, PenTool, Bell, User, Menu, X, LogOut, ChevronDown } from 'lucide-react'
 import { AuthContext } from '@/middleware/AuthContext'
 import { ThemeContext } from '@/middleware/ThemeContext'
+import { Switch } from "@/components/ui/switch"
 
 const Button = ({
   children,
@@ -33,19 +34,18 @@ export function UserHeaderComponent() {
   const [isScrolled, setIsScrolled] = useState(false)
   const navigate = useNavigate()
 
-  const {logout, user, } = useContext(AuthContext)
+  const {logout, user} = useContext(AuthContext)
   const {isDarkMode, toggleDarkMode} = useContext(ThemeContext)
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
-    if (isDropdownOpen) setIsDropdownOpen(false)
+    setIsDropdownOpen(false)
   }
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen)
-    if (isMenuOpen) setIsMenuOpen(false)
+    setIsMenuOpen(false)
   }
-
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,8 +53,9 @@ export function UserHeaderComponent() {
     }
 
     const handleClickOutside = (event) => {
-      if (isDropdownOpen && !event.target.closest('.dropdown-container')) {
+      if ((isDropdownOpen || isMenuOpen) && !event.target.closest('.dropdown-container')) {
         setIsDropdownOpen(false)
+        setIsMenuOpen(false)
       }
     }
 
@@ -65,7 +66,7 @@ export function UserHeaderComponent() {
       window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isDropdownOpen])
+  }, [isDropdownOpen, isMenuOpen])
 
   return (
     <div className={`sticky top-0 z-50 bg-background dark:bg-gray-800 transition-shadow duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
@@ -89,11 +90,11 @@ export function UserHeaderComponent() {
               <span className="sr-only">Notifications</span>
             </Button>
             <div className="dropdown-container relative">
-              <Button variant="outline" className="p-2" onClick={toggleDropdown}>
+              <Button variant="outline" className="p-3" onClick={toggleDropdown}>
                 <img
-                  alt="User avatar"
+                  alt={user.username[0].toUpperCase()}
                   className="rounded-full w-6 h-6 mr-2"
-                  src="/placeholder.svg?height=50&width=50"
+                  src={user.image?.secure_url}
                 />
                 <ChevronDown className="h-4 w-4" />
               </Button>
@@ -113,102 +114,101 @@ export function UserHeaderComponent() {
                     href="#"
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                     onClick={() => {
-                      console.log('Logging out...')
+                      if(!confirm("You are about to logout.")) return ;
                       logout()
-                      navigate('/login')
+                      setTimeout(() => {
+                        navigate('/login')
+                      }, 500);
                       setIsDropdownOpen(false)
                     }}
                   >
                     Logout
                   </a>
-                  <button
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    onClick={toggleDarkMode}
-                  >
-                    {isDarkMode ? (
-                      <span className="flex items-center">
-                        <Sun className="h-4 w-4 mr-2" /> Light Mode
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <Moon className="h-4 w-4 mr-2" /> Dark Mode
-                      </span>
-                    )}
-                  </button>
+                  <div className="px-4 py-2 flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-200">Dark Mode</span>
+                    <Switch
+                      checked={isDarkMode}
+                      onCheckedChange={toggleDarkMode}
+                      className="ml-2"
+                    />
+                  </div>
                 </div>
               )}
             </div>
           </nav>
-          <Button
-            variant="outline"
-            className="md:hidden p-2"
-            onClick={toggleMenu}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="dropdown-container relative md:hidden">
+            <Button
+              variant="outline"
+              className="p-2"
+              onClick={toggleMenu}
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 z-10">
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => {
+                    navigate('/create-post')
+                    toggleMenu()
+                  }}
+                >
+                  <PenTool className="inline-block mr-2 h-4 w-4" />
+                  New Post
+                </a>
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => {
+                    navigate('/notifications')
+                    toggleMenu()
+                  }}
+                >
+                  <Bell className="inline-block mr-2 h-4 w-4" />
+                  Notifications
+                </a>
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => {
+                    navigate('/profile')
+                    toggleMenu()
+                  }}
+                >
+                  <User className="inline-block mr-2 h-4 w-4" />
+                  View Profile
+                </a>
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => {
+                    console.log('Logging out...')
+                    logout()
+                    navigate('/login')
+                    toggleMenu()
+                  }}
+                >
+                  <LogOut className="inline-block mr-2 h-4 w-4" />
+                  Logout
+                </a>
+                <div className="px-4 py-2 flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-200">Dark Mode</span>
+                  <Switch
+                    checked={isDarkMode}
+                    onCheckedChange={() => {
+                      toggleDarkMode()
+                      toggleMenu()
+                    }}
+                    className="ml-2"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
-      {(isMenuOpen || isDropdownOpen) && (
-        <div className="md:hidden bg-white dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-          <nav className="px-4 py-2">
-            <Button
-              variant="outline"
-              className="w-full justify-start mb-2 text-gray-700 dark:text-gray-200"
-              onClick={() => { navigate('/create-post'); toggleMenu(); }}
-            >
-              <PenTool className="mr-2 h-4 w-4" />
-              New Post
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start mb-2 text-gray-700 dark:text-gray-200"
-              onClick={() => { navigate('/notifications'); toggleMenu(); }}
-            >
-              <Bell className="mr-2 h-4 w-4" />
-              Notifications
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start mb-2 text-gray-700 dark:text-gray-200"
-              onClick={() => { navigate('/profile'); toggleMenu(); }}
-            >
-              <User className="mr-2 h-4 w-4" />
-              View Profile
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start mb-2 text-gray-700 dark:text-gray-200"
-              onClick={() => {
-                console.log('Logging out...')
-                navigate('/login')
-                toggleMenu()
-              }}
-            >
-              <LogOut className="mr-2 h-4 w-4" onClick={()=> logout()}/>
-              Logout
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start text-gray-700 dark:text-gray-200"
-              onClick={() => {
-                toggleDarkMode()
-                toggleMenu()
-              }}
-            >
-              {isDarkMode ? (
-                <span className="flex items-center">
-                  <Sun className="mr-2 h-4 w-4" /> Light Mode
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <Moon className="mr-2 h-4 w-4" /> Dark Mode
-                </span>
-              )}
-            </Button>
-          </nav>
-        </div>
-      )}
     </div>
   )
 }

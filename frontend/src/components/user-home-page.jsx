@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Bell, PenTool, User ,Heart} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@apollo/client";
-import FETCH_POSTS from "@/graphql/postsGql";
+import FETCH_POSTS from "@/graphql/query/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
 import Loader from "./loader/Loader";
 import PostTime from "@/utils/PostTime";
@@ -61,7 +61,7 @@ export function UserHomePageJsx() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-15 lg:py-25">
           <div className="container px-4 md:px-6 mx-auto max-w-3xl">
             <div className="space-y-10">
               {posts.length === 0 ? (
@@ -69,7 +69,7 @@ export function UserHomePageJsx() {
                   No posts available.
                 </div>
               ) : (
-                posts.map((post, i) => (
+                [...posts].sort((a,b)=> b.createdAt - a.createdAt).map((post, i) => (
                   <div
                     key={i}
                     className="flex flex-col items-start gap-4 animate-fadeInUp bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-102"
@@ -77,10 +77,11 @@ export function UserHomePageJsx() {
                   >
                     <div className="w-full">
                       <div className="flex items-center">
-                        {post.author.image ? (
+                        {post.author.image && post.author.image.secure_url ? (
                           <img
                             src={post.author.image.secure_url}
                             alt={post.author.username}
+                            className="w-10 h-10 rounded-full object-cover"
                           />
                         ) : (
                           <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center">
@@ -104,9 +105,6 @@ export function UserHomePageJsx() {
                           src={post.image.secure_url}
                         />
                       )}
-                      <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                        {post.content}
-                      </p>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {post.tags?.map((tag, index) => (
                           <span
@@ -117,6 +115,9 @@ export function UserHomePageJsx() {
                           </span>
                         ))}
                       </div>
+                      <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
+                        {post.content}
+                      </p>
                       <div className="flex justify-between items-center">
                         <div className="relative">
                           <Button

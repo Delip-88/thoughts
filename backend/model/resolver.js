@@ -84,15 +84,17 @@ const resolvers = {
   },
 
   Mutation: {
-    async getUploadSignature(_, {tags, upload_preset,uploadFolder}, context) {
+    async getUploadSignature(
+      _,
+      { tags, upload_preset, uploadFolder }, context) {
       const user = await protectedRoute(context);
 
-      return uploadSignature(tags, upload_preset,uploadFolder);
+      return uploadSignature(tags, upload_preset, uploadFolder);
     },
-    async getDeleteSignature(_,{publicId},context){
+    async getDeleteSignature(_, { publicId }, context) {
       const user = await protectedRoute(context);
 
-      return deleteSignature(publicId)
+      return deleteSignature(publicId);
     },
     async addPost(_, { post }, context) {
       const user = await protectedRoute(context);
@@ -120,7 +122,7 @@ const resolvers = {
           { new: true }
         );
 
-        console.log("post created")
+        console.log("post created");
 
         return { message: "Post successfully created!", success: true };
       } catch (err) {
@@ -128,38 +130,47 @@ const resolvers = {
         throw new Error("Error creating post");
       }
     },
-
-
     async updateUser(_, { user }, context) {
       const loggedUser = await protectedRoute(context);
-      const { id, username, email, password } = user;
-
+      const { _id, username, address, bio, image } = user;
+    
+      // Create an object to hold the fields to update
+      const updates = { username }; // start with the username
+    
+      // Only add fields that are defined
+      if (address !== undefined) {
+        updates.address = address;
+      }
+      if (bio !== undefined) {
+        updates.bio = bio;
+      }
+      if (image !== undefined) {
+        updates.image = image;
+      }
+    
       try {
         const updateUser = await User.findByIdAndUpdate(
-          id,
-          {
-            username,
-            email,
-            password,
-          },
+          _id,
+          updates,
           { new: true }
         );
-
+    
         if (!updateUser) {
           throw new Error("User not found");
         }
-        return updateUser;
+        return { message: "Update Success", success: true };
       } catch (err) {
         console.error("Updation failed", err.message);
         throw new Error("Error updating user");
       }
     },
+    
     async updatePost(_, { post }, context) {
       const user = await protectedRoute(context);
-      const { id, title, content } = post;
+      const { _id, title, content } = post;
       try {
         const updatePost = await Post.findByIdAndUpdate(
-          id,
+          _id,
           { title, content },
           { new: true }
         );
@@ -191,33 +202,33 @@ const resolvers = {
         if (existingUsername) {
           throw new Error("Username is already in use.");
         }
-    
+
         // Check if the email is already in use
         const existingEmail = await User.findOne({ email });
         if (existingEmail) {
           throw new Error("Email is already in use.");
         }
-    
+
         // Generate a random 6-digit verification code
         const randTokenGenerate = Math.floor(
           100000 + Math.random() * 900000
         ).toString();
-    
+
         const newUser = new User({
           username,
           email,
           password,
           verificationToken: randTokenGenerate.toString(),
           verificationTokenExpiresAt: new Date(
-            Date.now() +  15 * 60 * 1000
+            Date.now() + 15 * 60 * 1000
           ).toISOString(),
         });
-    
+
         await newUser.save();
         console.log(
           `Sending verification email to: ${newUser.email} with code: ${randTokenGenerate}`
         );
-    
+
         await sendEmail(
           "email_verification",
           newUser.email,
@@ -233,7 +244,7 @@ const resolvers = {
         throw new Error(err.message);
       }
     },
-    
+
     async resendCode(_, { email }) {
       try {
         const user = await User.findOne({ email });
