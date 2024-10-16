@@ -1,20 +1,14 @@
-"use client";
-
 import React, { useContext, useEffect, useState } from "react";
-import { Bell, PenTool, User ,Heart} from "lucide-react";
+import { Bell, PenTool, User, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import FETCH_POSTS from "@/graphql/query/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
 import Loader from "./loader/Loader";
 import PostTime from "@/utils/PostTime";
+import { ADD_LIKE } from "@/graphql/mutations/likesGql";
 
-const Button = ({
-  children,
-  variant = "default",
-  className = "",
-  ...props
-}) => {
+const Button = ({ children, variant = "default", className = "", ...props }) => {
   const baseStyles =
     "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
   const variantStyles = {
@@ -33,28 +27,46 @@ const Button = ({
 };
 
 export function UserHomePageJsx() {
-
-  const {user} = useContext(AuthContext)
-  const {
-    data: postData,
-    loading: postLoading,
-    error: postError,
-  } = useQuery(FETCH_POSTS,{
-    fetchPolicy: 'network-only'
+  const { user } = useContext(AuthContext);
+  const { data: postData, loading: postLoading, error: postError } = useQuery(FETCH_POSTS, {
+    fetchPolicy: "network-only",
   });
 
+  const [likePost, { error: lError, loading: lLoading }] = useMutation(ADD_LIKE);
+
   const [posts, setPosts] = useState([]);
-  const navigate = useNavigate();
+
   useEffect(() => {
     if (postData) {
       setPosts(postData.posts);
     }
   }, [postData]);
-  // console.log(posts);
 
-  if (postLoading || !user)
-    return <Loader/>
+  const handleLike = async (postId, isLiked) => {
+    if (isLiked) return; // Prevent multiple likes if already liked
 
+    try {
+      const response = await likePost({
+        variables: { id: postId },
+      });
+
+      const { success } = response.data?.likeOnPost;
+      if (success) {
+        // Update post likes count locally
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post._id === postId
+              ? { ...post, likes: [...post.likes, user._id] } // Add user ID to likes array
+              : post
+          )
+        );
+      }
+    } catch (err) {
+      console.log(err.message);
+    }
+  };
+
+  if (postLoading || !user ) return <Loader />;
 
   if (postError) return <div>Error fetching User: {postError.message}</div>;
 
@@ -69,76 +81,89 @@ export function UserHomePageJsx() {
                   No posts available.
                 </div>
               ) : (
-                [...posts].sort((a,b)=> b.createdAt - a.createdAt).map((post, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col items-start gap-4 animate-fadeInUp bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-102"
-                    style={{ animationDelay: `${i * 200}ms` }}
-                  >
-                    <div className="w-full">
-                      <div className="flex items-center">
-                        {post.author.image && post.author.image.secure_url ? (
-                          <img
-                            src={post.author.image.secure_url}
-                            alt={post.author.username}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center">
-                            {post.author.username[0].toUpperCase()}
+                [...posts]
+                  .sort((a, b) => b.createdAt - a.createdAt)
+                  .map((post, i) => {
+                    const isLiked = post.likes.includes(user._id); // Check if the user has liked the post
+                    return (
+                      <div
+                        key={i}
+                        className="flex flex-col items-start gap-4 animate-fadeInUp bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-102"
+                        style={{ animationDelay: `${i * 200}ms` }}
+                      >
+                        <div className="w-full">
+                          <div className="flex items-center">
+                            {post.author.image && post.author.image.secure_url ? (
+                              <img
+                                src={post.author.image.secure_url}
+                                alt={post.author.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center">
+                                {post.author.username[0].toUpperCase()}
+                              </p>
+                            )}
+                            <div className="ml-3">
+                              <h3 className="font-semibold text-gray-800 dark:text-white">
+                                {post.author?.username || "Anonymous"}
+                              </h3>
+                              <PostTime createdAt={post.createdAt} />
+                            </div>
+                          </div>
+                          <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
+                            {post.title}
+                          </h4>
+                          {post.image && post.image.secure_url && (
+                            <img
+                              alt="Blog post image"
+                              className="w-full h-64 object-cover rounded-lg mb-4"
+                              src={post.image.secure_url}
+                            />
+                          )}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {post.tags?.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
+                            {post.content}
                           </p>
-                        )}
-                        <div className="ml-3">
-                          <h3 className="font-semibold text-gray-800 dark:text-white">
-                            {post.author?.username || "Anonymous"}
-                          </h3>
-                          <PostTime createdAt={post.createdAt} />
-                        </div>
-                      </div>
-                      <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
-                        {post.title}
-                      </h4>
-                      {post.image && post.image.secure_url && (
-                        <img
-                          alt="Blog post image"
-                          className="w-full h-64 object-cover rounded-lg mb-4"
-                          src={post.image.secure_url}
-                        />
-                      )}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {post.tags?.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                        {post.content}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <div className="relative">
-                          <Button
-                            variant="link"
-                            className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
-                          >
-                            Read More
-                          </Button>
-                        </div>
+                          <div className="flex justify-between items-center">
+                            <div className="relative">
+                              <Button
+                                variant="link"
+                                className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                              >
+                                Read More
+                              </Button>
+                            </div>
 
-                        <button
-                          className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors duration-200"
-                          aria-label={`Like this post. Current likes: ${post.likes}`}
-                        >
-                          <Heart className="h-5 w-5" />
-                          <span>{post.likes}</span>
-                        </button>
+                            <button
+                              className={`flex items-center space-x-2 ${
+                                isLiked
+                                  ? "text-red-500"
+                                  : "text-gray-600 hover:text-red-500"
+                              } transition-colors duration-200`}
+                              aria-label={`Like this post. Current likes: ${post.likes?.length || 0}`}
+                              onClick={() => handleLike(post._id, isLiked)}
+                              disabled={isLiked} // Disable if already liked
+                            >
+                              <Heart
+                                className={`h-5 w-5 cursor-cell ${isLiked ? "fill-red-700" : ""}`}
+                              />
+                              <span>{post.likes?.length || 0}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })
               )}
             </div>
           </div>
@@ -154,10 +179,7 @@ export function UserHomePageJsx() {
                   <PenTool className="mr-2 h-4 w-4" />
                   Write a New Post
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/edit-profile")}
-                >
+                <Button variant="outline" onClick={() => navigate("/edit-profile")}>
                   <User className="mr-2 h-4 w-4" />
                   Edit Profile
                 </Button>

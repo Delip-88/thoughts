@@ -93,8 +93,8 @@ export function UserHeaderComponent() {
               <Button variant="outline" className="p-3" onClick={toggleDropdown}>
                 <img
                   alt={user.username[0].toUpperCase()}
-                  className="rounded-full w-6 h-6 mr-2"
-                  src={user.image?.secure_url}
+                  className="rounded-full w-7 h-7 mr-1 object-cover"
+                  src={user.image && user.image?.secure_url ? user.image?.secure_url : "https://res.cloudinary.com/dduky37gb/image/upload/v1728969091/4213460-account-avatar-head-person-profile-user_115386_o1rutg.png"}
                 />
                 <ChevronDown className="h-4 w-4" />
               </Button>

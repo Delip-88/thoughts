@@ -54,6 +54,7 @@ export const typeDefs = `#graphql
         deletePost(id: ID!): Response!
         updateUser(user: updateUser!): Response!
         updatePost(post: updatePost!): Post
+        likeOnPost(id: ID!): Response!
         login(usernameoremail: String!, password: String!): AuthPayload!
         logout: Response!
         register(user: userInput!): Response!
@@ -92,8 +93,7 @@ export const typeDefs = `#graphql
         format: String
         width: Int
         height: Int
-        created_at: String       
-
+        created_at: String
     }
     input updateUser{
         _id: ID!

@@ -12,6 +12,8 @@ import {
   uploadSignature,
 } from "../utils/functions.js";
 
+import mongoose from "mongoose";
+
 const protectedRoute = async (context) => {
   const user = await resolvers.Query.checkAuth(null, null, context);
   if (!user) {
@@ -86,7 +88,9 @@ const resolvers = {
   Mutation: {
     async getUploadSignature(
       _,
-      { tags, upload_preset, uploadFolder }, context) {
+      { tags, upload_preset, uploadFolder },
+      context
+    ) {
       const user = await protectedRoute(context);
 
       return uploadSignature(tags, upload_preset, uploadFolder);
@@ -133,10 +137,10 @@ const resolvers = {
     async updateUser(_, { user }, context) {
       const loggedUser = await protectedRoute(context);
       const { _id, username, address, bio, image } = user;
-    
+
       // Create an object to hold the fields to update
       const updates = { username }; // start with the username
-    
+
       // Only add fields that are defined
       if (address !== undefined) {
         updates.address = address;
@@ -147,14 +151,12 @@ const resolvers = {
       if (image !== undefined) {
         updates.image = image;
       }
-    
+
       try {
-        const updateUser = await User.findByIdAndUpdate(
-          _id,
-          updates,
-          { new: true }
-        );
-    
+        const updateUser = await User.findByIdAndUpdate(_id, updates, {
+          new: true,
+        });
+
         if (!updateUser) {
           throw new Error("User not found");
         }
@@ -164,9 +166,9 @@ const resolvers = {
         throw new Error("Error updating user");
       }
     },
-    
+
     async updatePost(_, { post }, context) {
-      const user = await protectedRoute(context);
+      const loggedUser = await protectedRoute(context);
       const { _id, title, content } = post;
       try {
         const updatePost = await Post.findByIdAndUpdate(
@@ -184,6 +186,28 @@ const resolvers = {
         throw new Error("Error updating post");
       }
     },
+
+    async likeOnPost(_, { id }, context) {
+      const loggedUser = await protectedRoute(context);
+      console.log(id)
+      const post = await Post.findById(id);
+    
+      if (!post) {
+        throw new Error("Post doesn't exist");
+      }
+    
+      if (post.likes.includes(loggedUser._id)) {
+        // Unlike the post
+        post.likes = post.likes.filter(id => id.toString() !== loggedUser._id.toString());
+      } else {
+        // Like the post
+        post.likes.push(loggedUser._id);
+      }
+    
+      await post.save();
+      return { message: "Success", success: true };
+    },
+    
 
     async deleteUser(_, { id }, context) {
       const user = await protectedRoute(context);

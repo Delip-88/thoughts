@@ -20,7 +20,6 @@ const ME_QUERY = gql`
             createdAt
             likes {
                 _id
-                username
             }
         }
         _id

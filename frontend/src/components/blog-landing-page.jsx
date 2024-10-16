@@ -92,92 +92,92 @@ export function BlogLandingPageJsx() {
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="w-full py-12 md:py-15 lg:py-25">
           <div className="container px-4 md:px-6 mx-auto max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8 animate-fadeInUp text-gray-800 dark:text-white">
-              Featured Posts
-            </h2>
             <div className="space-y-10">
               {posts.length === 0 ? (
                 <div className="text-center text-gray-600 dark:text-gray-400">
                   No posts available.
                 </div>
               ) : (
-                [...posts].sort((a,b)=> (b.createdAt - a.createdAt)).map((post, i) => (
-
-                  <div
-                    key={i}
-                    className="flex flex-col items-start gap-4 animate-fadeInUp bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-102"
-                    style={{ animationDelay: `${i * 200}ms` }}
-                  >
-                    {console.log(post.createdAt)}
-                    <div className="w-full">
-                      <div className="flex items-center">
-                        {post.author.image ? (
-                          <img
-                            src={post.author.image.secure_url}
-                            alt={post.author.username}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <p
-                            className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center"
-                            style={{ color: "#111827" }}
-                          >
-                            {post.author.username[0].toUpperCase()}
+                [...posts]
+                  .sort((a, b) => b.createdAt - a.createdAt)
+                  .map((post, i) => {
+                    return (
+                      <div
+                        key={i}
+                        className="flex flex-col items-start gap-4 animate-fadeInUp bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-102"
+                        style={{ animationDelay: `${i * 200}ms` }}
+                      >
+                        <div className="w-full">
+                          <div className="flex items-center">
+                            {post.author.image &&
+                            post.author.image.secure_url ? (
+                              <img
+                                src={post.author.image.secure_url}
+                                alt={post.author.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center">
+                                {post.author.username[0].toUpperCase()}
+                              </p>
+                            )}
+                            <div className="ml-3">
+                              <h3 className="font-semibold text-gray-800 dark:text-white">
+                                {post.author?.username || "Anonymous"}
+                              </h3>
+                              <PostTime createdAt={post.createdAt} />
+                            </div>
+                          </div>
+                          <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
+                            {post.title}
+                          </h4>
+                          {post.image && post.image.secure_url && (
+                            <img
+                              alt="Blog post image"
+                              className="w-full h-64 object-cover rounded-lg mb-4"
+                              src={post.image.secure_url}
+                            />
+                          )}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {post.tags?.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
+                            {post.content}
                           </p>
-                        )}
-                        <div className="ml-3">
-                          <h3 className="font-semibold text-gray-800 dark:text-white">
-                            {post.author?.username || "Anonymous"}
-                          </h3>
-                          <PostTime createdAt={post.createdAt} />
-                        </div>
-                      </div>
-                      <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
-                        {post.title}
-                      </h4>
-                      {post.image && post.image.secure_url && (
-                        <img
-                          alt="Blog post image"
-                          className="w-full h-64 object-cover rounded-lg mb-4"
-                          src={post.image.secure_url}
-                        />
-                      )}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {post.tags?.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                        {post.content}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <div className="relative">
-                          <Button
-                            variant="link"
-                            className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
-                          >
-                            Read More
-                          </Button>
-                        </div>
+                          <div className="flex justify-between items-center">
+                            <div className="relative">
+                              <Button
+                                variant="link"
+                                className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                              >
+                                Read More
+                              </Button>
+                            </div>
 
-                        <button
-                          className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors duration-200"
-                          aria-label={`Like this post. Current likes: ${post.likes}`}
-                        >
-                          <Heart className="h-5 w-5" />
-                          <span>{post.likes}</span>
-                        </button>
+                            <button
+                              className={`flex items-center space-x-2 ${"text-gray-600 hover:text-red-500"} transition-colors duration-200`}
+                              aria-label={`Like this post. Current likes: ${
+                                post.likes?.length || 0
+                              }`}
+                              // Disable if already liked
+                            >
+                              <Heart className={"h-5 w-5 fill-red-700 cursor-cell"} />
+                              <span>{post.likes?.length || 0}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })
               )}
             </div>
           </div>

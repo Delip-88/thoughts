@@ -7,6 +7,9 @@ const FETCH_POSTS = gql`
       title
       content
       tags
+      likes{
+        _id
+      }
       image{
         public_id
         secure_url
