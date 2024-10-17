@@ -45,6 +45,8 @@ Input.displayName = "Input";
 
 export function BlogLandingPageJsx() {
   const [posts, setPosts] = useState([]);
+  const [expanded, setExpanded] = useState([]); // Track expanded state for each post
+
   const {
     data: { posts: fetchedPosts } = {},
     error,
@@ -55,11 +57,21 @@ export function BlogLandingPageJsx() {
     let fPosts = fetchedPosts;
     if (fPosts) {
       setPosts(fPosts);
+      setExpanded(new Array(fetchedPosts.length).fill(false)); // Initialize expanded state
+
     } else {
       setPosts([]);
     }
   }, [fetchedPosts]);
   const navigate = useNavigate();
+
+  const toggleExpand = (index) => {
+    setExpanded((prev) => {
+      const newExpanded = [...prev];
+      newExpanded[index] = !newExpanded[index];
+      return newExpanded;
+    });
+  };
 
   if (loading) return <Loader />;
   if (error) return <div>{error.message}</div>;
@@ -92,7 +104,7 @@ export function BlogLandingPageJsx() {
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-15 lg:py-25">
+        <section className="w-full py-12 md:py-15 lg:py-25 transition-all ease-linear">
           <div className="container px-4 md:px-6 mx-auto max-w-3xl">
             <div className="space-y-10">
               {posts.length === 0 ? (
@@ -136,7 +148,7 @@ export function BlogLandingPageJsx() {
                           {post.image && post.image.secure_url && (
                             <img
                               alt="Blog post image"
-                              className="w-full h-64 object-cover rounded-lg mb-4"
+                              className="w-full max-h-96 object-scale-down rounded-lg mb-1"
                               src={post.image.secure_url}
                             />
                           )}
@@ -151,26 +163,31 @@ export function BlogLandingPageJsx() {
                             ))}
                           </div>
                           <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                            {post.content}
+                            {expanded[i]
+                              ? post.content
+                              : post.content.slice(0, 200) + "..."}
                           </p>
                           <div className="flex justify-between items-center">
                             <div className="relative">
                               <Button
                                 variant="link"
                                 className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                                onClick={() => toggleExpand(i)}
                               >
-                                Read More
+                                {expanded[i] ? "Read Less" : "Read More"}
                               </Button>
                             </div>
 
                             <button
-                              className={`flex items-center space-x-2 ${"text-gray-600 hover:text-red-500"} transition-colors duration-200`}
+                              className={`flex items-center space-x-2 text-red-500 transition-colors duration-200`}
                               aria-label={`Like this post. Current likes: ${
                                 post.likes?.length || 0
                               }`}
-                              // Disable if already liked
                             >
-                              <Heart className={"h-5 w-5 fill-red-700 cursor-cell"} />
+                              <Heart
+                                className={`h-5 w-5 cursor-cell fill-red-700
+                                `}
+                              />
                               <span>{post.likes?.length || 0}</span>
                             </button>
                           </div>

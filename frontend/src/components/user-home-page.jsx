@@ -8,7 +8,12 @@ import Loader from "./loader/Loader";
 import PostTime from "@/utils/PostTime";
 import { ADD_LIKE } from "@/graphql/mutations/likesGql";
 
-const Button = ({ children, variant = "default", className = "", ...props }) => {
+const Button = ({
+  children,
+  variant = "default",
+  className = "",
+  ...props
+}) => {
   const baseStyles =
     "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
   const variantStyles = {
@@ -28,17 +33,24 @@ const Button = ({ children, variant = "default", className = "", ...props }) => 
 
 export function UserHomePageJsx() {
   const { user } = useContext(AuthContext);
-  const { data: postData, loading: postLoading, error: postError } = useQuery(FETCH_POSTS, {
+  const {
+    data: postData,
+    loading: postLoading,
+    error: postError,
+  } = useQuery(FETCH_POSTS, {
     fetchPolicy: "network-only",
   });
 
-  const [likePost, { error: lError, loading: lLoading }] = useMutation(ADD_LIKE);
+  const [likePost] =
+    useMutation(ADD_LIKE);
 
   const [posts, setPosts] = useState([]);
+  const [expanded, setExpanded] = useState([]); // Track expanded state for each post
 
   useEffect(() => {
     if (postData) {
       setPosts(postData.posts);
+      setExpanded(new Array(postData.posts.length).fill(false)); // Initialize expanded state
     }
   }, [postData]);
 
@@ -66,14 +78,22 @@ export function UserHomePageJsx() {
     }
   };
 
-  if (postLoading || !user ) return <Loader />;
+  const toggleExpand = (index) => {
+    setExpanded((prev) => {
+      const newExpanded = [...prev];
+      newExpanded[index] = !newExpanded[index];
+      return newExpanded;
+    });
+  };
+
+  if (postLoading || !user) return <Loader />;
 
   if (postError) return <div>Error fetching User: {postError.message}</div>;
 
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
-        <section className="w-full py-12 md:py-15 lg:py-25">
+        <section className="w-full py-12 md:py-15 lg:py-25 transition-all ease-linear">
           <div className="container px-4 md:px-6 mx-auto max-w-3xl">
             <div className="space-y-10">
               {posts.length === 0 ? (
@@ -93,7 +113,8 @@ export function UserHomePageJsx() {
                       >
                         <div className="w-full">
                           <div className="flex items-center">
-                            {post.author.image && post.author.image.secure_url ? (
+                            {post.author.image &&
+                            post.author.image.secure_url ? (
                               <img
                                 src={post.author.image.secure_url}
                                 alt={post.author.username}
@@ -117,7 +138,7 @@ export function UserHomePageJsx() {
                           {post.image && post.image.secure_url && (
                             <img
                               alt="Blog post image"
-                              className="w-full h-64 object-cover rounded-lg mb-4"
+                              className="w-full max-h-96 object-scale-down rounded-lg mb-1"
                               src={post.image.secure_url}
                             />
                           )}
@@ -132,15 +153,16 @@ export function UserHomePageJsx() {
                             ))}
                           </div>
                           <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                            {post.content}
+                            {expanded[i] ? post.content : post.content.slice(0, 200) + "..."}
                           </p>
                           <div className="flex justify-between items-center">
                             <div className="relative">
                               <Button
                                 variant="link"
                                 className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                                onClick={() => toggleExpand(i)}
                               >
-                                Read More
+                                {expanded[i] ? "Read Less" : "Read More"}
                               </Button>
                             </div>
 
@@ -150,12 +172,16 @@ export function UserHomePageJsx() {
                                   ? "text-red-500"
                                   : "text-gray-600 hover:text-red-500"
                               } transition-colors duration-200`}
-                              aria-label={`Like this post. Current likes: ${post.likes?.length || 0}`}
+                              aria-label={`Like this post. Current likes: ${
+                                post.likes?.length || 0
+                              }`}
                               onClick={() => handleLike(post._id, isLiked)}
                               disabled={isLiked} // Disable if already liked
                             >
                               <Heart
-                                className={`h-5 w-5 cursor-cell ${isLiked ? "fill-red-700" : ""}`}
+                                className={`h-5 w-5 cursor-cell ${
+                                  isLiked ? "fill-red-700" : ""
+                                }`}
                               />
                               <span>{post.likes?.length || 0}</span>
                             </button>
@@ -168,29 +194,7 @@ export function UserHomePageJsx() {
             </div>
           </div>
         </section>
-        <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6 mx-auto">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">
-                Quick Actions
-              </h2>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button onClick={() => navigate("/create-post")}>
-                  <PenTool className="mr-2 h-4 w-4" />
-                  Write a New Post
-                </Button>
-                <Button variant="outline" onClick={() => navigate("/edit-profile")}>
-                  <User className="mr-2 h-4 w-4" />
-                  Edit Profile
-                </Button>
-                <Button variant="outline">
-                  <Bell className="mr-2 h-4 w-4" />
-                  Manage Notifications
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
+
       </main>
     </div>
   );

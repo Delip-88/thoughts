@@ -73,7 +73,7 @@ export function UserHeaderComponent() {
       <header className="max-w-7xl mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-14">
           <NavLink className="flex items-center justify-center" to="/Home">
-            <BookOpen className="h-6 w-6 mr-2 text-gray-800 dark:text-gray-200" />
+            <BookOpen className="h-6 w-6 mr-2 text-gray-800 dark:text-gray-200 transition-transform duration-200 ease-in-out hover:rotate-12" />
             <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">My Blog</span>
           </NavLink>
           <nav className="hidden md:flex items-center gap-4">

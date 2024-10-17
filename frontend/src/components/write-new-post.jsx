@@ -135,9 +135,23 @@ export function WriteNewPost() {
     }));
   };
 
+
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Only JPEG, PNG, and GIF images are allowed");
+        return;
+      }
+
       setFormData((prevData) => ({
         ...prevData,
         image: file,
@@ -146,7 +160,16 @@ export function WriteNewPost() {
         ...prevErrors,
         image: "",
       }));
-      setPreviewImage(URL.createObjectURL(file));
+
+      // Use FileReader for preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.onerror = () => {
+        toast.error("Error reading file");
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -216,14 +239,21 @@ export function WriteNewPost() {
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: data }
+        { 
+          method: "POST", 
+          body: data,
+          mode: 'cors',
+        }
       );
 
-      if (!response.ok) throw new Error("Image upload failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Image upload failed: ${errorData.error?.message || 'Unknown error'}`);
+      }
       return await response.json();
     } catch (err) {
       console.error(`Image upload failed: ${err.message}`);
-      toast.error("Image upload failed");
+      toast.error(`Image upload failed: ${err.message}`);
       return null;
     }
   };
@@ -236,18 +266,29 @@ export function WriteNewPost() {
     if (validateForm()) {
       let requiredImageProps = null;
       if (formData.image) {
-        const imageData = await uploadImage(formData.image);
+        try {
+          const imageData = await uploadImage(formData.image);
+          if (!imageData) {
+            setPosting(false);
+            return; // Exit if image upload failed
+          }
 
-        requiredImageProps = {
-          public_id: imageData.public_id,
-          secure_url: imageData.secure_url,
-          asset_id: imageData.asset_id,
-          version: parseInt(imageData.version, 10),
-          format: imageData.format,
-          width: parseInt(imageData.width, 10),
-          height: parseInt(imageData.height, 10),
-          created_at: imageData.created_at,
-        };
+          requiredImageProps = {
+            public_id: imageData.public_id,
+            secure_url: imageData.secure_url,
+            asset_id: imageData.asset_id,
+            version: parseInt(imageData.version, 10),
+            format: imageData.format,
+            width: parseInt(imageData.width, 10),
+            height: parseInt(imageData.height, 10),
+            created_at: imageData.created_at,
+          };
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          toast.error("Failed to upload image. Please try again.");
+          setPosting(false);
+          return;
+        }
       }
 
       try {
@@ -277,33 +318,7 @@ export function WriteNewPost() {
           setPreviewImage(null);
           navigate("/Home");
         }
-        setPosting(false);
       } catch (err) {
-        if (formData.image && requiredImageProps) {
-          const res = await getDeleteSignature({
-            variables: {
-              publicId: requiredImageProps.public_id,
-            },
-          });
-          const { timestamp, signature } = await res.data?.getDeleteSignature;
-
-          await fetch(
-            `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                public_id: requiredImageProps.public_id,
-                api_key: import.meta.env.VITE_CLOUD_API_KEY,
-                timestamp,
-                signature,
-              }),
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          );
-        }
-
         console.log("Error:", err);
         if (err.graphQLErrors?.[0]) {
           toast.error(err.graphQLErrors[0].message || "An error occurred.");
@@ -312,18 +327,55 @@ export function WriteNewPost() {
         } else {
           toast.error(err.message || "An unexpected error occurred.");
         }
+
+        // If post creation fails, attempt to delete the uploaded image
+        if (requiredImageProps) {
+          try {
+            const res = await getDeleteSignature({
+              variables: {
+                publicId: requiredImageProps.public_id,
+              },
+            });
+            const { timestamp, signature } = await res.data?.getDeleteSignature;
+
+            await fetch(
+              `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  public_id: requiredImageProps.public_id,
+                  api_key: import.meta.env.VITE_CLOUD_API_KEY,
+                  timestamp,
+                  signature,
+                }),
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          } catch (deleteError) {
+            console.error("Failed to delete uploaded image:", deleteError);
+          }
+        }
       } finally {
         setPosting(false);
       }
+    } else {
+      setPosting(false);
     }
   };
+
 
   if (cLoading || uLoading || dLoading || dLoading) return <Loader />;
 
   return (
     <>
       {posting && <Loader />}
-      <div className={`flex flex-col min-h-screen ${isDarkMode ? "bg-gray-900 text-gray-200" : "bg-white text-gray-900"}`}>
+      <div
+        className={`flex flex-col min-h-screen ${
+          isDarkMode ? "bg-gray-900 text-gray-200" : "bg-white text-gray-900"
+        }`}
+      >
         <header className="px-4 lg:px-6 h-14 flex items-center">
           <NavLink className="flex items-center justify-center" to="/Home">
             <ArrowLeft className="h-6 w-6 mr-2" />
@@ -338,7 +390,11 @@ export function WriteNewPost() {
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                     Write a New Post
                   </h1>
-                  <p className={`mx-auto max-w-[700px] ${isDarkMode ? "text-gray-400" : "text-gray-500"} md:text-xl`}>
+                  <p
+                    className={`mx-auto max-w-[700px] ${
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    } md:text-xl`}
+                  >
                     Share your thoughts and ideas with the world
                   </p>
                 </div>
@@ -355,10 +411,16 @@ export function WriteNewPost() {
                         value={formData.title}
                         onChange={handleChange}
                         aria-invalid={errors.title ? "true" : "false"}
-                        aria-describedby={errors.title ? "title-error" : undefined}
+                        aria-describedby={
+                          errors.title ? "title-error" : undefined
+                        }
                       />
                       {errors.title && (
-                        <p id="title-error" className="mt-2 text-sm text-red-600" role="alert">
+                        <p
+                          id="title-error"
+                          className="mt-2 text-sm text-red-600"
+                          role="alert"
+                        >
                           {errors.title}
                         </p>
                       )}
@@ -370,10 +432,16 @@ export function WriteNewPost() {
                         value={formData.content}
                         onChange={handleChange}
                         aria-invalid={errors.content ? "true" : "false"}
-                        aria-describedby={errors.content ? "content-error" : undefined}
+                        aria-describedby={
+                          errors.content ? "content-error" : undefined
+                        }
                       />
                       {errors.content && (
-                        <p id="content-error" className="mt-2 text-sm text-red-600" role="alert">
+                        <p
+                          id="content-error"
+                          className="mt-2 text-sm text-red-600"
+                          role="alert"
+                        >
                           {errors.content}
                         </p>
                       )}
@@ -381,22 +449,54 @@ export function WriteNewPost() {
                     <div className="space-y-4">
                       <h2 className="text-xl font-semibold">Featured Image</h2>
                       <div className="w-full">
-                        <div 
+                        <div
                           className={`mt-1 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
                             isDarkMode ? "border-gray-600" : "border-gray-300"
-                          } ${previewImage ? 'h-64' : ''}`}
-                          onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                          } ${previewImage ? "h-64" : ""}`}
                         >
                           {previewImage ? (
-                            <img
-                              src={previewImage}
-                              alt="Selected preview"
-                              className="max-h-full max-w-full object-contain"
-                            />
+                            <div className="relative w-full h-full">
+                              <img
+                                src={previewImage}
+                                alt="Selected preview"
+                                className="max-h-full max-w-full object-contain"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewImage(null);
+                                  setFormData((prevData) => ({
+                                    ...prevData,
+                                    image: null,
+                                  }));
+                                  if (fileInputRef.current) {
+                                    fileInputRef.current.value = "";
+                                  }
+                                }}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                aria-label="Remove image"
+                              >
+                                <X size={20} />
+                              </button>
+                            </div>
                           ) : (
-                            <div className="space-y-1 text-center">
-                              <ImageIcon className={`mx-auto h-12 w-12 ${isDarkMode ? "text-gray-400" : "text-gray-400"}`} />
-                              <div className={`flex text-sm ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+                            <div
+                              className="space-y-1 text-center cursor-pointer"
+                              onClick={() =>
+                                fileInputRef.current &&
+                                fileInputRef.current.click()
+                              }
+                            >
+                              <ImageIcon
+                                className={`mx-auto h-12 w-12 ${
+                                  isDarkMode ? "text-gray-400" : "text-gray-400"
+                                }`}
+                              />
+                              <div
+                                className={`flex text-sm ${
+                                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                                }`}
+                              >
                                 <label
                                   htmlFor="image"
                                   className={`relative cursor-pointer bg-transparent rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary`}
@@ -414,20 +514,32 @@ export function WriteNewPost() {
                                 </label>
                                 <p className="pl-1">or drag and drop</p>
                               </div>
-                              <p className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                              <p
+                                className={`text-xs ${
+                                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                                }`}
+                              >
                                 PNG, JPG, GIF up to 10MB
                               </p>
                             </div>
                           )}
                         </div>
                         {formData.image && (
-                          <p className={`mt-2 text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                          <p
+                            className={`mt-2 text-sm ${
+                              isDarkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
                             Selected file: {formData.image.name}
                           </p>
                         )}
                       </div>
                       {errors.image && (
-                        <p id="image-error" className="mt-2 text-sm text-red-600" role="alert">
+                        <p
+                          id="image-error"
+                          className="mt-2 text-sm text-red-600"
+                          role="alert"
+                        >
                           {errors.image}
                         </p>
                       )}
@@ -473,7 +585,11 @@ export function WriteNewPost() {
                         ))}
                       </div>
                       {errors.tags && (
-                        <p id="tags-error" className="mt-2 text-sm text-red-600" role="alert">
+                        <p
+                          id="tags-error"
+                          className="mt-2 text-sm text-red-600"
+                          role="alert"
+                        >
                           {errors.tags}
                         </p>
                       )}
