@@ -47,7 +47,7 @@ const Header = () => {
       <header className="px-4 lg:px-6 h-16 flex items-center justify-between">
         <a
           className="flex items-center justify-center"
-          href="#"
+          href="/"
           onClick={() => navigate("/")}
         >
           <BookOpen className="h-6 w-6 transition-transform duration-200 ease-in-out hover:rotate-12 text-gray-800 dark:text-gray-200" />
@@ -60,7 +60,7 @@ const Header = () => {
             <a
               key={item}
               className="text-base font-medium hover:underline underline-offset-4 transition-all duration-200 ease-in-out hover:text-primary text-gray-700 dark:text-gray-300"
-              href="#"
+              href={`/${item}`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {item}
@@ -79,36 +79,36 @@ const Header = () => {
               <ChevronDown className="h-4 w-4" />
             </button>
             {isDropdownOpen && (
-  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 z-10">
-    
-    {/* Login Link */}
-    <NavLink
-      to="/login"
-      className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-    >
-      Login
-    </NavLink>
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 z-10">
+                {/* Login Link */}
+                <NavLink
+                  to="/login"
+                  className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                >
+                  Login
+                </NavLink>
 
-    {/* Sign Up Link */}
-    <NavLink
-      to="/register"
-      className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-    >
-      Sign Up
-    </NavLink>
+                {/* Sign Up Link */}
+                <NavLink
+                  to="/register"
+                  className="block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                >
+                  Sign Up
+                </NavLink>
 
-    {/* Dark Mode Switch */}
-    <div className="px-4 py-2 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-600">
-      <span className="text-sm text-gray-700 dark:text-gray-200">Dark Mode</span>
-      <Switch
-        checked={isDarkMode}
-        onCheckedChange={toggleDarkMode}
-        className="ml-2"
-      />
-    </div>
-  </div>
-)}
-
+                {/* Dark Mode Switch */}
+                <div className="px-4 py-2 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-600">
+                  <span className="text-sm text-gray-700 dark:text-gray-200">
+                    Dark Mode
+                  </span>
+                  <Switch
+                    checked={isDarkMode}
+                    onCheckedChange={toggleDarkMode}
+                    className="ml-2"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div className="dropdown-container relative md:hidden">
             <button

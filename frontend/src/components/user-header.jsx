@@ -77,7 +77,7 @@ export function UserHeaderComponent() {
             <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">My Blog</span>
           </NavLink>
           <nav className="hidden md:flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/create-post')}>
+            <Button variant="outline" className='p-3' onClick={() => navigate('/create-post')}>
               <PenTool className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">New Post</span>
             </Button>

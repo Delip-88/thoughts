@@ -16,6 +16,8 @@ import { WriteNewPost } from "./components/write-new-post";
 import { EditProfilePageJsx } from "./components/edit-profile-page";
 import { ViewProfile } from "./components/view-profile";
 import { PageNotFoundComponent } from "./components/page-not-found";
+import { AboutPageJsx } from "./components/about-page";
+import { ContactPageJsx } from "./components/contact-page";
 
 const App = () => {
   return (
@@ -26,6 +28,8 @@ const App = () => {
         <Route path="/" element={<Layout />}>
           <Route path="/" index element={<BlogLandingPageJsx />} />
           <Route path="/login" element={<LoginPageJsx />} />
+          <Route path="/about" element={<AboutPageJsx />} />
+          <Route path="/contact" element={<ContactPageJsx />} />
           <Route path="/register" element={<RegisterPageJsx />} />
           <Route
             path="/email-verification"
