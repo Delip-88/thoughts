@@ -1,12 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Bell, PenTool, User, Heart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Heart } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client";
 import FETCH_POSTS from "@/graphql/query/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
 import Loader from "./loader/Loader";
 import PostTime from "@/utils/PostTime";
 import { ADD_LIKE } from "@/graphql/mutations/likesGql";
+
+import { AdvancedImage } from "@cloudinary/react";
+import { fill } from "@cloudinary/url-gen/actions/resize";
 
 const Button = ({
   children,
@@ -32,7 +34,7 @@ const Button = ({
 };
 
 export function UserHomePageJsx() {
-  const { user } = useContext(AuthContext);
+  const { user, cid } = useContext(AuthContext);
   const {
     data: postData,
     loading: postLoading,
@@ -105,6 +107,18 @@ export function UserHomePageJsx() {
                   .sort((a, b) => b.createdAt - a.createdAt)
                   .map((post, i) => {
                     const isLiked = post.likes.includes(user._id); // Check if the user has liked the post
+                    const authorImage = post.author.image.public_id
+                    ? cid
+                        .image(post.author.image.public_id)
+                        .resize(fill().width(40).height(40))
+                        .format("auto")
+                    : null;
+                  const blogImage = post.image.public_id
+                    ? cid
+                        .image(post.image.public_id)
+                        .resize(fill().width(800).height(384))
+                        .format("auto")
+                    : null;
                     return (
                       <div
                         key={i}
@@ -114,9 +128,9 @@ export function UserHomePageJsx() {
                         <div className="w-full">
                           <div className="flex items-center">
                             {post.author.image &&
-                            post.author.image.secure_url ? (
-                              <img
-                                src={post.author.image.secure_url}
+                            authorImage ? (
+                              <AdvancedImage
+                                cldImg={authorImage}
                                 alt={post.author.username}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
@@ -135,11 +149,11 @@ export function UserHomePageJsx() {
                           <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
                             {post.title}
                           </h4>
-                          {post.image && post.image.secure_url && (
-                            <img
-                              alt="Blog post image"
-                              className="w-full max-h-96 object-scale-down rounded-lg mb-1"
-                              src={post.image.secure_url}
+                          {post.image && blogImage && (
+                            <AdvancedImage
+                              cldImg={blogImage}
+                              alt={post.title} // Use movie title for accessibility
+                              className="w-full h-auto rounded-lg shadow-lg mb-4"
                             />
                           )}
                           <div className="flex flex-wrap gap-2 mb-4">
