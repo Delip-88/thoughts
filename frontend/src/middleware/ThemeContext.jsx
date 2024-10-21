@@ -13,12 +13,16 @@ export const ThemeProvider = ({ children }) => {
     }
   }, []);
 
-  // Apply the dark class to the document whenever isDarkMode changes
+  // Apply the dark class and update CSS variables whenever isDarkMode changes
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
+      // Remove any custom background color set for light mode
+      document.documentElement.style.removeProperty('--light-background');
     } else {
       document.documentElement.classList.remove("dark");
+      // Set a slightly darker background for light mode
+      document.documentElement.style.setProperty('--light-background', 'hsl(0, 50%, 20%)');
     }
   }, [isDarkMode]);
 

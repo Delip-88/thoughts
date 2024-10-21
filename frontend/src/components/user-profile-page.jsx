@@ -1,65 +1,75 @@
-'use client'
+"use client";
 
-import React, { useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation } from '@apollo/client'
-import { User, MessageSquare, MapPin, Calendar } from 'lucide-react'
-import { format } from 'date-fns'
-import { AuthContext } from '@/middleware/AuthContext'
-import { ThemeContext } from '@/middleware/ThemeContext'
-import { GET_USER_PROFILE } from '@/graphql/query/userProfileQuery'
-import { SEND_MESSAGE } from '@/graphql/mutations/sendMessageMutation'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from 'react-toastify'
+import React, { useContext, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@apollo/client";
+import { User, MessageSquare, MapPin, Calendar, Heart, X } from "lucide-react";
+import { format } from "date-fns";
+import { AuthContext } from "@/middleware/AuthContext";
+import { ThemeContext } from "@/middleware/ThemeContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "react-toastify";
+import { GET_USER_PROFILE } from "@/graphql/query/userProfileGql";
 
 export function UserProfilePageComponent() {
-  const { username } = useParams()
-  const navigate = useNavigate()
-  const { user: currentUser } = useContext(AuthContext)
-  const { isDarkMode } = useContext(ThemeContext)
-  const [sendMessage] = useMutation(SEND_MESSAGE)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user: currentUser } = useContext(AuthContext);
+  const { isDarkMode } = useContext(ThemeContext);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
 
   const { loading, error, data } = useQuery(GET_USER_PROFILE, {
-    variables: { username },
-    fetchPolicy: 'network-only'
-  })
+    variables: { id },
+    fetchPolicy: "network-only",
+  });
 
   const handleSendMessage = async () => {
-    try {
-      const { data } = await sendMessage({
-        variables: { recipientId: data.user._id, content: "Hi, I'd like to connect!" }
-      })
-      if (data.sendMessage.success) {
-        toast.success("Message sent successfully!")
-        navigate('/messages')
-      }
-    } catch (err) {
-      toast.error("Failed to send message. Please try again.")
-    }
-  }
+    // Implement sendMessage mutation logic here
+    toast.info("Message functionality not implemented yet.");
+  };
 
   if (loading) return <ProfileSkeleton />;
   if (error) return <div>Error loading profile: {error.message}</div>;
   if (!data || !data.user) return <div>User not found</div>;
 
-  const { user } = data
+  const { user } = data;
 
   return (
-    (<div
-      className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
+    <div
+      className={`min-h-screen w-full ${
+        isDarkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
+      }`}
+    >
       <div className="container mx-auto px-4 py-8">
         <Card
-          className={`max-w-4xl mx-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          className={`w-full ${
+            isDarkMode ? "bg-gray-800" : "bg-white"
+          }`}
+        >
           <CardHeader className="flex flex-col sm:flex-row items-center gap-4">
-            <Avatar className="w-24 h-24">
+            <Avatar 
+              className="w-24 h-24 cursor-pointer transition-transform hover:scale-105"
+              onClick={() => setIsImageExpanded(true)}
+            >
               <AvatarImage src={user.image?.secure_url} alt={user.username} />
-              <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+              <AvatarFallback>
+                {user.username ? user.username[0].toUpperCase() : "U"}
+              </AvatarFallback>
             </Avatar>
-            <div className="text-center sm:text-left">
-              <CardTitle className="text-2xl font-bold">{user.username}</CardTitle>
+            <div className="text-center sm:text-left flex-grow">
+              <CardTitle className="text-2xl font-bold">
+                {user.username}
+              </CardTitle>
               <CardDescription className="flex items-center justify-center sm:justify-start mt-2">
                 <User className="mr-2 h-4 w-4" />
                 {user.name}
@@ -72,11 +82,22 @@ export function UserProfilePageComponent() {
               )}
               <CardDescription className="flex items-center justify-center sm:justify-start mt-1">
                 <Calendar className="mr-2 h-4 w-4" />
-                Joined {format(new Date(user.createdAt), 'MMMM yyyy')}
+                {user.createdAt
+                  ? (() => {
+                      const createdAtTimestamp = parseInt(user.createdAt, 10);
+                      const createdAtDate = new Date(createdAtTimestamp);
+                      return isNaN(createdAtDate.getTime())
+                        ? "Join date unavailable"
+                        : `Joined ${format(createdAtDate, "MMMM yyyy")}`;
+                    })()
+                  : "Join date unavailable"}
               </CardDescription>
             </div>
             {currentUser && currentUser._id !== user._id && (
-              <Button className="mt-4 sm:mt-0 sm:ml-auto" onClick={handleSendMessage}>
+              <Button
+                className="mt-4 sm:mt-0 transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
+                onClick={handleSendMessage}
+              >
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Message
               </Button>
@@ -87,18 +108,34 @@ export function UserProfilePageComponent() {
             {user.posts && user.posts.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {user.posts.map((post) => (
-                  <Card key={post._id} className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <Card
+                    key={post._id}
+                    className={`${isDarkMode ? "bg-gray-700" : "bg-gray-50"} relative`}
+                  >
                     <CardHeader>
                       <CardTitle>{post.title}</CardTitle>
-                      <CardDescription>{format(new Date(post.createdAt), 'PPP')}</CardDescription>
+                      <CardDescription className="flex items-center mt-1">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {post.createdAt
+                          ? format(new Date(parseInt(post.createdAt, 10)), "PPP")
+                          : "Date unavailable"}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <p className="line-clamp-3">{post.content}</p>
                     </CardContent>
-                    <CardFooter>
-                      <Button variant="outline" onClick={() => navigate(`/post/${post._id}`)}>
+                    <CardFooter className="flex justify-between items-center">
+                      <Button
+                        variant="outline"
+                        className="transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md"
+                        onClick={() => navigate(`/post/${post._id}`)}
+                      >
                         Read More
                       </Button>
+                      <div className="flex items-center">
+                        <Heart className="h-5 w-5 text-red-500 mr-1 hover:fill-red-500 cursor-pointer" />
+                        <span>{post.likes?.length || 0}</span>
+                      </div>
                     </CardFooter>
                   </Card>
                 ))}
@@ -109,17 +146,42 @@ export function UserProfilePageComponent() {
           </CardContent>
         </Card>
       </div>
-    </div>)
+
+      {isImageExpanded && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setIsImageExpanded(false)}
+        >
+          <div 
+            className={`relative max-w-3xl max-h-3xl ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              className="absolute top-2 right-2 rounded-full p-2"
+              onClick={() => setIsImageExpanded(false)}
+              variant="ghost"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+            <img 
+              src={user.image?.secure_url} 
+              alt={user.username} 
+              className="max-w-full max-h-[80vh] object-contain"
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
 function ProfileSkeleton() {
   return (
-    (<div className="container mx-auto px-4 py-8">
-      <Card className="max-w-4xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
+      <Card className="w-full">
         <CardHeader className="flex flex-col sm:flex-row items-center gap-4">
           <Skeleton className="w-24 h-24 rounded-full" />
-          <div className="space-y-2">
+          <div className="space-y-2 flex-grow">
             <Skeleton className="h-8 w-40" />
             <Skeleton className="h-4 w-60" />
             <Skeleton className="h-4 w-40" />
@@ -137,14 +199,15 @@ function ProfileSkeleton() {
                 <CardContent>
                   <Skeleton className="h-20 w-full" />
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex justify-between">
                   <Skeleton className="h-10 w-28" />
+                  <Skeleton className="h-5 w-10" />
                 </CardFooter>
               </Card>
             ))}
           </div>
         </CardContent>
       </Card>
-    </div>)
+    </div>
   );
 }

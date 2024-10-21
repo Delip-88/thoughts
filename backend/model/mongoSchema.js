@@ -97,6 +97,20 @@ const postSchema = new mongoose.Schema({
     type: String,
     required: [true, "Content is required"],
   },
+  category: {
+    type: String,
+    enum: [
+      "technology",
+      "travel",
+      "food",
+      "lifestyle",
+      "health",
+      "business",
+      "entertainment",
+      "other",
+    ],
+    required: true,
+  },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

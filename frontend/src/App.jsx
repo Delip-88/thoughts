@@ -18,6 +18,7 @@ import { ViewProfile } from "./components/view-profile";
 import { PageNotFoundComponent } from "./components/page-not-found";
 import { AboutPageJsx } from "./components/about-page";
 import { ContactPageJsx } from "./components/contact-page";
+import { UserProfilePageComponent } from "./components/user-profile-page";
 
 const App = () => {
   return (
@@ -58,6 +59,8 @@ const App = () => {
           <Route path="/profile" element={<ViewProfile />} />
           <Route path="/create-post" element={<WriteNewPost />} />
           <Route path="/edit-profile" element={<EditProfilePageJsx />} />
+          <Route path="/user-profile/:id" element={<UserProfilePageComponent />} />
+
           {/* Handle any random URL after login */}
           <Route path="*" element={<PageNotFoundComponent />} />
         </Route>

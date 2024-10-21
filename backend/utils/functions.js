@@ -16,7 +16,7 @@ export const getData = async (collection) => {
 // Function to get data by ID
 export const getDataById = async (collection, id) => {
   try {
-    const data = await collection.findById(id);
+    const data = await collection.findById(id).select("-password");
     if (!data) {
       return null; // Return null if data not found
     }
@@ -91,7 +91,6 @@ const deleteImage = async (publicId) => {
 };
 
 export const uploadSignature = async (tags, upload_preset, uploadFolder) => {
-
   const timestamp = Math.round(new Date().getTime() / 1000);
 
   const paramsToSign = {
@@ -99,7 +98,6 @@ export const uploadSignature = async (tags, upload_preset, uploadFolder) => {
     folder: uploadFolder,
     upload_preset: upload_preset,
     tags: tags || undefined,
-
   };
 
   //Generate the signature

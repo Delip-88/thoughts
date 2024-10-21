@@ -57,14 +57,14 @@ const Header = () => {
         </a>
         <nav className="hidden md:flex gap-4 sm:gap-6">
           {navlinks.map((item, index) => (
-            <a
+            <NavLink
               key={item}
               className="text-base font-medium hover:underline underline-offset-4 transition-all duration-200 ease-in-out hover:text-primary text-gray-700 dark:text-gray-300"
-              href={`/${item}`}
+              to={`/${item !== "Home" ? item : ""}`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {item}
-            </a>
+            </NavLink>
           ))}
         </nav>
         <div className="flex items-center">

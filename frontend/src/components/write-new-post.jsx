@@ -10,11 +10,18 @@ import { AuthContext } from "@/middleware/AuthContext";
 import { ThemeContext } from "@/middleware/ThemeContext";
 import FETCH_POSTS from "@/graphql/query/postsGql";
 import Loader from "./loader/Loader";
-import {
-  GET_DELETE_SIGNATURE,
-  GET_UPLOAD_SIGNATURE,
-} from "@/graphql/mutations/getSignature";
+
 import ME_QUERY from "@/graphql/query/meGql";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUploadImage } from "./Functions/uploadImage";
+import { useDeleteImage } from "./Functions/deleteImage";
 
 const Input = React.forwardRef(({ className, type, label, ...props }, ref) => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -92,23 +99,19 @@ export function WriteNewPost() {
   const navigate = useNavigate();
   const { user, cloudName } = useContext(AuthContext);
   const { isDarkMode } = useContext(ThemeContext);
-  const [createPost, { data: cData, error: cError, loading: cLoading }] =
-    useMutation(CREATE_POST, {
-      refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
-      awaitRefetchQueries: true,
-    });
-  const [
-    getUploadSignature,
-    { data: sData, error: sError, loading: uLoading },
-  ] = useMutation(GET_UPLOAD_SIGNATURE);
-  const [
-    getDeleteSignature,
-    { data: dData, error: dError, loading: dLoading },
-  ] = useMutation(GET_DELETE_SIGNATURE);
+  const [createPost, { loading: cLoading }] = useMutation(CREATE_POST, {
+    refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
+    awaitRefetchQueries: true,
+  });
+
+  const { uploadImage, loading: uLoading } = useUploadImage();
+  const { deleteImage, loading: dLoading } = useDeleteImage();
+
   const [posting, setPosting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
+    category: "",
     image: null,
     tags: [],
     authorId: user._id,
@@ -116,12 +119,24 @@ export function WriteNewPost() {
   const [errors, setErrors] = useState({
     title: "",
     content: "",
+    category: "",
     image: "",
     tags: "",
   });
   const [currentTag, setCurrentTag] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
+
+  const categories = [
+    "Technology",
+    "Travel",
+    "Food",
+    "Lifestyle",
+    "Health",
+    "Business",
+    "Entertainment",
+    "Other",
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -134,7 +149,9 @@ export function WriteNewPost() {
       [name]: "",
     }));
   };
-
+  const handleCategoryChange = (value) => {
+    setFormData((prev) => ({ ...prev, category: value }));
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -146,9 +163,14 @@ export function WriteNewPost() {
       }
 
       // Check file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ];
       if (!allowedTypes.includes(file.type)) {
-        toast.error("Only JPEG, PNG, and GIF images are allowed");
+        toast.error("Only JPEG, PNG, WEBP and GIF images are allowed");
         return;
       }
 
@@ -195,6 +217,7 @@ export function WriteNewPost() {
       title: "",
       content: "",
       image: "",
+      category: "",
       tags: "",
     };
     let isValid = true;
@@ -211,51 +234,13 @@ export function WriteNewPost() {
       newErrors.tags = "At least one tag is required";
       isValid = false;
     }
+    if (formData.category.trim() === 0) {
+      newErrors.tags = "Category is required";
+      isValid = false;
+    }
 
     setErrors(newErrors);
     return isValid;
-  };
-
-  const uploadImage = async (file) => {
-    try {
-      const res = await getUploadSignature({
-        variables: {
-          tags: formData.tags,
-          upload_preset: import.meta.env.VITE_SIGNED_UPLOAD_PRESET,
-          uploadFolder: import.meta.env.VITE_UPLOAD_POST_IMAGE_FOLDER,
-        },
-      });
-
-      const { timestamp, signature } = await res.data?.getUploadSignature;
-      
-      const data = new FormData();
-      data.append("file", file);
-      data.append("api_key", import.meta.env.VITE_CLOUD_API_KEY);
-      data.append("upload_preset", import.meta.env.VITE_SIGNED_UPLOAD_PRESET);
-      data.append("folder", import.meta.env.VITE_UPLOAD_POST_IMAGE_FOLDER);
-      data.append("tags", formData.tags.join(","));
-      data.append("timestamp", timestamp);
-      data.append("signature", signature);
-
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { 
-          method: "POST", 
-          body: data,
-          mode: 'cors',
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Image upload failed: ${errorData.error?.message || 'Unknown error'}`);
-      }
-      return await response.json();
-    } catch (err) {
-      console.error(`Image upload failed: ${err.message}`);
-      toast.error(`Image upload failed: ${err.message}`);
-      return null;
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -267,7 +252,12 @@ export function WriteNewPost() {
       let requiredImageProps = null;
       if (formData.image) {
         try {
-          const imageData = await uploadImage(formData.image);
+          const imageData = await uploadImage(
+            cloudName,
+            formData.image,
+            import.meta.env.VITE_SIGNED_UPLOAD_PRESET,
+            import.meta.env.VITE_UPLOAD_POST_IMAGE_FOLDER
+          );
           if (!imageData) {
             setPosting(false);
             return; // Exit if image upload failed
@@ -292,14 +282,17 @@ export function WriteNewPost() {
       }
 
       try {
+        const { __typename, ...imageWithoutTypename } = requiredImageProps;
+
         const response = await createPost({
           variables: {
             post: {
               title: formData.title,
               content: formData.content,
               tags: formData.tags,
+              category: formData.category,
               authorId: formData.authorId,
-              image: requiredImageProps,
+              image: imageWithoutTypename,
             },
           },
         });
@@ -331,28 +324,7 @@ export function WriteNewPost() {
         // If post creation fails, attempt to delete the uploaded image
         if (requiredImageProps) {
           try {
-            const res = await getDeleteSignature({
-              variables: {
-                publicId: requiredImageProps.public_id,
-              },
-            });
-            const { timestamp, signature } = await res.data?.getDeleteSignature;
-
-            await fetch(
-              `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
-              {
-                method: "POST",
-                body: JSON.stringify({
-                  public_id: requiredImageProps.public_id,
-                  api_key: import.meta.env.VITE_CLOUD_API_KEY,
-                  timestamp,
-                  signature,
-                }),
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              }
-            );
+            await deleteImage(cloudName,requiredImageProps.public_id)
           } catch (deleteError) {
             console.error("Failed to delete uploaded image:", deleteError);
           }
@@ -365,8 +337,7 @@ export function WriteNewPost() {
     }
   };
 
-
-  if (cLoading || uLoading || dLoading || dLoading) return <Loader />;
+  if (cLoading || uLoading || dLoading) return <Loader />;
 
   return (
     <>
@@ -541,6 +512,60 @@ export function WriteNewPost() {
                           role="alert"
                         >
                           {errors.image}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2 w-full sm:w-1/2 lg:w-1/3">
+                      <Label
+                        htmlFor="category"
+                        className={`block text-sm font-medium ${
+                          isDarkMode ? "text-gray-200" : "text-gray-700"
+                        }`}
+                      >
+                        Category
+                      </Label>
+                      <Select
+                        onValueChange={handleCategoryChange}
+                        value={formData.category}
+                      >
+                        <SelectTrigger
+                          className={`w-full ${
+                            isDarkMode
+                              ? "bg-gray-800 text-gray-200 border-gray-700"
+                              : "bg-white text-gray-900 border-gray-300"
+                          }`}
+                        >
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent
+                          className={`${
+                            isDarkMode
+                              ? "bg-gray-800 text-gray-200"
+                              : "bg-white text-gray-900"
+                          }`}
+                        >
+                          {categories.map((category) => (
+                            <SelectItem
+                              key={category}
+                              value={category.toLowerCase()}
+                              className={`${
+                                isDarkMode
+                                  ? "hover:bg-gray-700"
+                                  : "hover:bg-gray-100"
+                              }`}
+                            >
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.category && (
+                        <p
+                          id="category-error"
+                          className="mt-2 text-sm text-red-600"
+                          role="alert"
+                        >
+                          {errors.category}
                         </p>
                       )}
                     </div>

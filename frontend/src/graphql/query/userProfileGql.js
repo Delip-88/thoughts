@@ -1,16 +1,15 @@
 import { gql } from "@apollo/client";
 
-const ME_QUERY = gql`
-  query Me {
-    me {
+export const GET_USER_PROFILE = gql`
+query getUserProfile($id: ID!){
+    user(id: $id){
+        _id
         username
-        email
         address
         bio
         image{
-          secure_url
           public_id
-          
+              secure_url
         }
         posts {
             _id
@@ -26,10 +25,7 @@ const ME_QUERY = gql`
                 _id
             }
         }
-        _id
         createdAt
     }
-  }
-`;
-
-export default ME_QUERY;
+}
+`

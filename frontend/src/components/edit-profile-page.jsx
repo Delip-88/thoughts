@@ -97,8 +97,8 @@ const Button = ({
 export function EditProfilePageJsx() {
   const { user, cloudName } = useContext(AuthContext);
 
-  const { uploadImage, error: uError, loading: uLoading } = useUploadImage();
-  const { deleteImage, error: dError, loading: dLoading } = useDeleteImage();
+  const { uploadImage, loading: uLoading } = useUploadImage();
+  const { deleteImage, loading: dLoading } = useDeleteImage();
 
   const navigate = useNavigate();
 
@@ -109,7 +109,7 @@ export function EditProfilePageJsx() {
     image: null,
   });
 
-  const [updateUserInfo, { data: meData, error: meError, loading: meLoading }] =
+  const [updateUserInfo, {loading: meLoading }] =
     useMutation(UPDATE_USER_INFO, {
       refetchQueries: [{ query: ME_QUERY }],
       awaitRefetchQueries: true,

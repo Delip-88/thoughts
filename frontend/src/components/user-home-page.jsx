@@ -9,6 +9,8 @@ import { ADD_LIKE } from "@/graphql/mutations/likesGql";
 
 import { AdvancedImage } from "@cloudinary/react";
 import { fill } from "@cloudinary/url-gen/actions/resize";
+import { useNavigate } from "react-router-dom";
+import { HomePageSkeleton } from "./home-page-skeleton";
 
 const Button = ({
   children,
@@ -35,6 +37,7 @@ const Button = ({
 
 export function UserHomePageJsx() {
   const { user, cid } = useContext(AuthContext);
+  const navigate = useNavigate()
   const {
     data: postData,
     loading: postLoading,
@@ -43,8 +46,7 @@ export function UserHomePageJsx() {
     fetchPolicy: "network-only",
   });
 
-  const [likePost] =
-    useMutation(ADD_LIKE);
+  const [likePost] = useMutation(ADD_LIKE);
 
   const [posts, setPosts] = useState([]);
   const [expanded, setExpanded] = useState([]); // Track expanded state for each post
@@ -88,7 +90,11 @@ export function UserHomePageJsx() {
     });
   };
 
-  if (postLoading || !user) return <Loader />;
+  const userProfile = (id)=>{
+    navigate(`/user-profile/${id}`)
+  }
+  
+  if (postLoading || !user) return <HomePageSkeleton />;
 
   if (postError) return <div>Error fetching User: {postError.message}</div>;
 
@@ -108,17 +114,17 @@ export function UserHomePageJsx() {
                   .map((post, i) => {
                     const isLiked = post.likes.includes(user._id); // Check if the user has liked the post
                     const authorImage = post.author.image.public_id
-                    ? cid
-                        .image(post.author.image.public_id)
-                        .resize(fill().width(40).height(40))
-                        .format("auto")
-                    : null;
-                  const blogImage = post.image.public_id
-                    ? cid
-                        .image(post.image.public_id)
-                        .resize(fill().width(800).height(384))
-                        .format("auto")
-                    : null;
+                      ? cid
+                          .image(post.author.image.public_id)
+                          .resize(fill().width(40).height(40))
+                          .format("auto")
+                      : null;
+                    const blogImage = post.image.public_id
+                      ? cid
+                          .image(post.image.public_id)
+                          .resize(fill().width(800).height(384))
+                          .format("auto")
+                      : null;
                     return (
                       <div
                         key={i}
@@ -127,28 +133,30 @@ export function UserHomePageJsx() {
                       >
                         <div className="w-full">
                           <div className="flex items-center">
-                            {post.author.image &&
-                            authorImage ? (
+                            {post.author.image && authorImage ? (
                               <AdvancedImage
                                 cldImg={authorImage}
                                 alt={post.author.username}
-                                className="w-10 h-10 rounded-full object-cover"
+                                className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                                onClick = {()=>userProfile(post.author._id)}
                               />
                             ) : (
-                              <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center">
+                              <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center cursor-pointer" onClick = {()=>userProfile(post.author._id)}>
                                 {post.author.username[0].toUpperCase()}
                               </p>
                             )}
                             <div className="ml-3">
-                              <h3 className="font-semibold text-gray-800 dark:text-white">
-                                {post.author?.username || "Anonymous"}
-                              </h3>
+                              
+                              <p className="font-semibold text-gray-800 dark:text-white cursor-pointer" onClick = {()=>userProfile(post.author._id)} >
+                                {post.author?.username.charAt(0).toUpperCase() +
+                                  post.author?.username.slice(1) || "Anonymous"}
+                              </p>
                               <PostTime createdAt={post.createdAt} />
                             </div>
                           </div>
-                          <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
+                          <p className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
                             {post.title}
-                          </h4>
+                          </p>
                           {post.image && blogImage && (
                             <AdvancedImage
                               cldImg={blogImage}
@@ -167,17 +175,22 @@ export function UserHomePageJsx() {
                             ))}
                           </div>
                           <p className="text-gray-800 dark:text-gray-300 mb-4 text-lg leading-relaxed">
-                            {expanded[i] ? post.content : post.content.slice(0, 200) + "..."}
+                            {expanded[i] || post.content.length <= 200
+                              ? post.content
+                              : post.content.slice(0, 200) + "..."}
                           </p>
+
                           <div className="flex justify-between items-center">
                             <div className="relative">
-                              <Button
-                                variant="link"
-                                className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
-                                onClick={() => toggleExpand(i)}
-                              >
-                                {expanded[i] ? "Read Less" : "Read More"}
-                              </Button>
+                              {post.content.length > 200 && (
+                                <Button
+                                  variant="link"
+                                  className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                                  onClick={() => toggleExpand(i)}
+                                >
+                                  {expanded[i] ? "Read Less" : "Read More"}
+                                </Button>
+                              )}
                             </div>
 
                             <button
@@ -208,7 +221,6 @@ export function UserHomePageJsx() {
             </div>
           </div>
         </section>
-
       </main>
     </div>
   );

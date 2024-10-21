@@ -6,6 +6,7 @@ const FETCH_POSTS = gql`
       _id
       title
       content
+      category
       tags
       likes{
         _id
@@ -16,6 +17,7 @@ const FETCH_POSTS = gql`
       }
       createdAt
       author {
+        _id
         username
         image{
           public_id

@@ -41,6 +41,8 @@ const resolvers = {
     },
     async user(_, { id }, context) {
       await protectedRoute(context);
+      console.log("inside")
+      console.log(id)
       return getDataById(User, id); // Fetch a user by ID
     },
     posts() {
@@ -103,13 +105,14 @@ const resolvers = {
     async addPost(_, { post }, context) {
       const user = await protectedRoute(context);
 
-      const { title, content, tags, image } = post;
+      const { title, content, tags, image , category} = post;
 
       try {
         const newPost = new Post({
           title,
           content,
           tags,
+          category,
           image: image || null,
           author: user._id,
         });

@@ -11,6 +11,7 @@ import { AuthContext } from "@/middleware/AuthContext";
 
 import { AdvancedImage } from "@cloudinary/react";
 import { fill } from "@cloudinary/url-gen/actions/resize";
+import { HomePageSkeleton } from "./home-page-skeleton";
 
 const Button = ({
   children,
@@ -78,7 +79,7 @@ export function BlogLandingPageJsx() {
     });
   };
 
-  if (loading) return <Loader />;
+  if (loading) return <HomePageSkeleton />;
   if (error) return <div>{error.message}</div>;
 
   return (

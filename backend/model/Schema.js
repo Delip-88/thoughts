@@ -22,11 +22,13 @@ export const typeDefs = `#graphql
         _id: ID!
         title: String!
         content: String!
+        category: String
         tags: [String!]!
         author:User!
         likes: [User!]     # likes by userId
         createdAt: String
         image: Image
+
     }
     type Image{
         public_id: String
@@ -83,6 +85,7 @@ export const typeDefs = `#graphql
         title: String!
         content: String!
         tags: [String!]!
+        category: String!
         image: ImageInput
     }
     input ImageInput{

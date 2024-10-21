@@ -22,6 +22,7 @@ import ME_QUERY from "@/graphql/query/meGql";
 
 import { AdvancedImage } from "@cloudinary/react";
 import { fill } from "@cloudinary/url-gen/actions/resize";
+import PostTime from "@/utils/PostTime";
 
 const Button = ({
   children,
@@ -117,7 +118,7 @@ export function ViewProfile() {
 
   const [
     deletePost,
-    { data: deleteData, error: deleteError, loading: deleteLoading },
+    { error: deleteError, loading: deleteLoading },
   ] = useMutation(DELETE_POST_BY_ID, {
     refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
     awaitRefetchQueries: true,
@@ -289,13 +290,23 @@ export function ViewProfile() {
                   <h2 className="text-2xl font-bold mb-4">My Posts</h2>
                   <div className="space-y-6">
                     {posts.length > 0 ? (
-                      posts.map((post) => (
+                      [...posts].sort((a,b)=>b.createdAt - a.createdAt).map((post) => {
+
+                    const blogImage = post.image.public_id
+                      ? cid
+                          .image(post.image.public_id)
+                          .resize(fill().width(800).height(384))
+                          .format("auto")
+                      : null;
+                        return (
                         <div
                           key={post._id}
                           className={`${
                             isDarkMode ? "bg-gray-800" : "bg-white"
                           } shadow rounded-lg p-6 relative`}
                         >
+                          
+                            <PostTime createdAt={post.createdAt} />
                           <div className="absolute top-2 right-2">
                             <MoreOptions
                               onDelete={() => handleDeletePost(post._id)}
@@ -304,6 +315,23 @@ export function ViewProfile() {
                           <h3 className="text-xl font-semibold mb-2">
                             {post.title}
                           </h3>
+                          {post.image && blogImage && (
+                            <AdvancedImage
+                              cldImg={blogImage}
+                              alt={post.title} // Use movie title for accessibility
+                              className="w-full h-auto rounded-lg shadow-lg mb-4"
+                            />
+                          )}
+                           <div className="flex flex-wrap gap-2 mb-4">
+                            {post.tags?.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                           <p
                             className={`${
                               isDarkMode ? "text-gray-300" : "text-gray-600"
@@ -328,7 +356,7 @@ export function ViewProfile() {
                             </div>
                           </div>
                         </div>
-                      ))
+                      )})
                     ) : (
                       <p
                         className={`${
