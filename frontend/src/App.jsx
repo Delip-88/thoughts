@@ -19,6 +19,7 @@ import { PageNotFoundComponent } from "./components/page-not-found";
 import { AboutPageJsx } from "./components/about-page";
 import { ContactPageJsx } from "./components/contact-page";
 import { UserProfilePageComponent } from "./components/user-profile-page";
+import { ArchivePageJsx } from "./components/archive-page";
 
 const App = () => {
   return (
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/" index element={<BlogLandingPageJsx />} />
           <Route path="/login" element={<LoginPageJsx />} />
           <Route path="/about" element={<AboutPageJsx />} />
+          <Route path="/archive" element={<ArchivePageJsx />} />
           <Route path="/contact" element={<ContactPageJsx />} />
           <Route path="/register" element={<RegisterPageJsx />} />
           <Route

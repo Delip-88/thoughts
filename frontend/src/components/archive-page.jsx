@@ -9,22 +9,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from 'lucide-react'
-import { GET_ARCHIVED_POSTS } from '@/graphql/queries/archivedPostsQuery'
+import FETCH_POSTS from '@/graphql/query/postsGql'
 
 export function ArchivePageJsx() {
   const { isDarkMode } = useContext(ThemeContext)
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const { loading, error, data } = useQuery(GET_ARCHIVED_POSTS)
+  const { loading, error, data } = useQuery(FETCH_POSTS)
   const [organizedPosts, setOrganizedPosts] = useState({})
 
   useEffect(() => {
-    if (data && data.archivedPosts) {
-      const posts = data.archivedPosts.filter(post => 
+    if (data && data.posts) {
+      const posts = data.posts.filter(post => 
         selectedCategory === 'all' || post.category === selectedCategory)
+      
       const organized = posts.reduce((acc, post) => {
-        const date = new Date(post.createdAt)
+        // Convert createdAt timestamp to a Date object, ensuring it's a number
+        const createdAtTimestamp = typeof post.createdAt === 'string' ? parseInt(post.createdAt, 10) : post.createdAt;
+        const date = new Date(createdAtTimestamp) // Parse number to date
+        
+        
         const year = date.getFullYear()
-        const month = date.getMonth()
+        const month = date.getMonth()  // Note: .getMonth() returns month index (0-11)
         if (!acc[year]) acc[year] = {}
         if (!acc[year][month]) acc[year][month] = []
         acc[year][month].push(post)
@@ -37,14 +42,12 @@ export function ArchivePageJsx() {
   if (loading) return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   if (error) return <div className="text-center text-red-500">Error loading archived posts: {error.message}</div>;
 
-  const categories = ['all', ...new Set(data.archivedPosts.map(post => post.category))]
+  const categories = ['all', ...new Set(data.posts.map(post => post.category))]
 
   return (
-    (<div
-      className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
       <div className="container mx-auto px-4 py-8">
-        <Card
-          className={`max-w-4xl mx-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        <Card className={`max-w-4xl mx-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-center">Post Archive</CardTitle>
             <CardDescription className="text-center mt-2">
@@ -75,14 +78,14 @@ export function ArchivePageJsx() {
                     {Object.keys(organizedPosts[year]).sort((a, b) => b - a).map(month => (
                       <div key={`${year}-${month}`} className="mb-4">
                         <h3 className="text-lg font-semibold mb-2">
-                          {format(new Date(year, month), 'MMMM')}
+                          {format(new Date(year, parseInt(month, 10)), 'MMMM')} {/* Parse month as integer */}
                         </h3>
                         <ul className="space-y-2">
                           {organizedPosts[year][month].map(post => (
-                            <li key={post.id} className="flex justify-between items-center">
+                            <li key={post._id} className="flex justify-between items-center">
                               <span>{post.title}</span>
                               <Button variant="outline" size="sm" asChild>
-                                <a href={`/post/${post.id}`}>Read</a>
+                                <a href={`/post/${post._id}`}>Read</a>
                               </Button>
                             </li>
                           ))}
@@ -96,6 +99,6 @@ export function ArchivePageJsx() {
           </CardContent>
         </Card>
       </div>
-    </div>)
+    </div>
   );
 }

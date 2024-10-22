@@ -282,7 +282,9 @@ export function WriteNewPost() {
       }
 
       try {
-        const { __typename, ...imageWithoutTypename } = requiredImageProps;
+        const imageWithoutTypename = requiredImageProps
+          ? (({ __typename, ...rest }) => rest)(requiredImageProps)
+          : null;
 
         const response = await createPost({
           variables: {
@@ -324,7 +326,7 @@ export function WriteNewPost() {
         // If post creation fails, attempt to delete the uploaded image
         if (requiredImageProps) {
           try {
-            await deleteImage(cloudName,requiredImageProps.public_id)
+            await deleteImage(cloudName, requiredImageProps.public_id);
           } catch (deleteError) {
             console.error("Failed to delete uploaded image:", deleteError);
           }
