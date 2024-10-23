@@ -131,7 +131,7 @@ const Header = () => {
                     <NavLink
                       key={item}
                       className="block px-4 py-2 text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 ease-in-out hover:text-primary dark:hover:text-primary-dark text-gray-700 dark:text-gray-200 animate-slideDown"
-                      to="#"
+                      to={`/${item !== "Home" ? item : ""}`}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       {item}

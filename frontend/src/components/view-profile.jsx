@@ -17,7 +17,7 @@ import { ThemeContext } from "@/middleware/ThemeContext";
 import DELETE_POST_BY_ID from "@/graphql/mutations/deletePostGql";
 import { toast } from "react-toastify";
 import Loader from "./loader/Loader";
-import FETCH_POSTS from "@/graphql/query/postsGql";
+import {FETCH_POSTS} from "@/graphql/query/postsGql";
 import ME_QUERY from "@/graphql/query/meGql";
 
 import { AdvancedImage } from "@cloudinary/react";

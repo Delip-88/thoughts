@@ -8,7 +8,7 @@ import CREATE_POST from "@/graphql/mutations/newPostGql";
 import { toast } from "react-toastify";
 import { AuthContext } from "@/middleware/AuthContext";
 import { ThemeContext } from "@/middleware/ThemeContext";
-import FETCH_POSTS from "@/graphql/query/postsGql";
+import {FETCH_POSTS} from "@/graphql/query/postsGql";
 import Loader from "./loader/Loader";
 
 import ME_QUERY from "@/graphql/query/meGql";

@@ -1,35 +1,43 @@
 "use client";
 
-import React, { useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
-import { format } from 'date-fns';
-import { Heart, MessageCircle, Share2, ArrowLeft } from 'lucide-react';
-import { AuthContext } from '@/middleware/AuthContext';
-import { ThemeContext } from '@/middleware/ThemeContext';
+import React, { useState, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation } from "@apollo/client";
+import { format } from "date-fns";
+import { Heart, MessageCircle, Share2, ArrowLeft } from "lucide-react";
+import { AuthContext } from "@/middleware/AuthContext";
+import { ThemeContext } from "@/middleware/ThemeContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from 'react-toastify';
-import { GET_POST } from '@/graphql/queries/getPostQuery';
-import { LIKE_POST, ADD_COMMENT } from '@/graphql/mutations/postMutations';
+import { toast } from "react-toastify";
+// import { LIKE_POST, ADD_COMMENT } from '@/graphql/mutations/postMutations';
+import { FETCH_POST_BY_ID } from "@/graphql/query/postsGql";
+
+import { AdvancedImage } from "@cloudinary/react";
 
 export function PostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useContext(AuthContext);
+  const { user: currentUser, cid } = useContext(AuthContext);
   const { isDarkMode } = useContext(ThemeContext);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
 
-  const { loading, error, data } = useQuery(GET_POST, {
+  const { loading, error, data } = useQuery(FETCH_POST_BY_ID, {
     variables: { id },
     fetchPolicy: "network-only",
   });
 
-  const [likePost] = useMutation(LIKE_POST);
-  const [addComment] = useMutation(ADD_COMMENT);
+  // const [likePost] = useMutation(LIKE_POST);
+  // const [addComment] = useMutation(ADD_COMMENT);
 
   if (loading) return <PostSkeleton />;
   if (error) return <div>Error loading post: {error.message}</div>;
@@ -38,35 +46,44 @@ export function PostPage() {
   const { post } = data;
 
   const handleLike = async () => {
-    try {
-      await likePost({ variables: { postId: post._id } });
-      toast.success('Post liked!');
-    } catch (err) {
-      toast.error('Failed to like post. Please try again.');
-    }
+    // try {
+    //   await likePost({ variables: { postId: post._id } });
+    //   toast.success('Post liked!');
+    // } catch (err) {
+    //   toast.error('Failed to like post. Please try again.');
+    // }
   };
 
   const handleComment = async (e) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    // if (!comment.trim()) return;
 
-    try {
-      await addComment({ variables: { postId: post._id, content: comment } });
-      setComment('');
-      toast.success('Comment added successfully!');
-    } catch (err) {
-      toast.error('Failed to add comment. Please try again.');
-    }
+    // try {
+    //   await addComment({ variables: { postId: post._id, content: comment } });
+    //   setComment('');
+    //   toast.success('Comment added successfully!');
+    // } catch (err) {
+    //   toast.error('Failed to add comment. Please try again.');
+    // }
   };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    toast.success('Link copied to clipboard!');
+    toast.success("Link copied to clipboard!");
   };
 
+  const authorImage = post.author.image?.public_id
+    ? cid.image(post.author.image.public_id).format("auto")
+    : null;
+  const blogImage = post.image?.public_id
+    ? cid.image(post.image.public_id).format("auto")
+    : null;
   return (
-    (<div
-      className={`min-h-screen w-full ${isDarkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"}`}>
+    <div
+      className={`min-h-screen w-full ${
+        isDarkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
+      }`}
+    >
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -76,31 +93,41 @@ export function PostPage() {
         <Card className={`w-full ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
           <CardHeader>
             <div className="flex items-center space-x-4">
-              <Avatar>
-                <AvatarImage src={post.author.image?.secure_url} alt={post.author.username} />
-                <AvatarFallback>{post.author.username[0].toUpperCase()}</AvatarFallback>
-              </Avatar>
+              {authorImage ? (
+                <AdvancedImage
+                  cldImg={authorImage}
+                  alt={post.author.username}
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                />
+              ) : (
+                <p className="p-2 w-10 h-10 text-[25px] rounded-full text-center bg-gray-300 aspect-square flex items-center justify-center cursor-pointer">
+                  {post.author.username[0].toUpperCase()}
+                </p>
+              )}
               <div>
                 <CardTitle>{post.title}</CardTitle>
                 <p className="text-sm text-gray-500">
-                  By {post.author.username} • {format(new Date(parseInt(post.createdAt)), 'PPP')}
+                  By {post.author.username} •{" "}
+                  {format(new Date(parseInt(post.createdAt)), "PPP")}
                 </p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {post.image && (
-              <img
-                src={post.image.secure_url}
-                alt={post.title}
-                className="w-full h-64 object-cover rounded-lg mb-4" />
+            { blogImage && (
+              <AdvancedImage
+                cldImg={blogImage}
+                alt={post.title} // Use movie title for accessibility
+                className="w-full h-auto rounded-lg shadow-lg mb-4"
+              />
             )}
             <p className="whitespace-pre-wrap">{post.content}</p>
             <div className="flex flex-wrap gap-2 mt-4">
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800">
+                  className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800"
+                >
                   {tag}
                 </span>
               ))}
@@ -110,12 +137,17 @@ export function PostPage() {
             <div className="flex space-x-4">
               <Button variant="ghost" onClick={handleLike}>
                 <Heart
-                  className={`mr-2 h-4 w-4 ${post.likes.includes(currentUser?._id) ? 'fill-red-500 text-red-500' : ''}`} />
+                  className={`mr-2 h-4 w-4 ${
+                    post.likes.includes(currentUser?._id)
+                      ? "fill-red-500 text-red-500"
+                      : ""
+                  }`}
+                />
                 {post.likes.length}
               </Button>
               <Button variant="ghost">
                 <MessageCircle className="mr-2 h-4 w-4" />
-                {post.comments.length}
+                {/* {post.comments.length } */} 0
               </Button>
             </div>
             <Button variant="ghost" onClick={handleShare}>
@@ -135,38 +167,41 @@ export function PostPage() {
                 placeholder="Add a comment..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="mb-2" />
+                className="mb-2"
+              />
               <Button type="submit" disabled={!comment.trim()}>
                 Post Comment
               </Button>
             </form>
-            {post.comments.map((comment) => (
-              <div
-                key={comment._id}
-                className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Avatar>
-                    <AvatarImage src={comment.author.image?.secure_url} alt={comment.author.username} />
-                    <AvatarFallback>{comment.author.username[0].toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold">{comment.author.username}</p>
-                    <p className="text-xs text-gray-500">{format(new Date(parseInt(comment.createdAt)), 'PPP')}</p>
-                  </div>
-                </div>
-                <p>{comment.content}</p>
-              </div>
-            ))}
+            {
+              // post.comments.map((comment) => (
+              //   <div
+              //     key={comment._id}
+              //     className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
+              //     <div className="flex items-center space-x-2 mb-2">
+              //       <Avatar>
+              //         <AvatarImage src={comment.author.image?.secure_url} alt={comment.author.username} />
+              //         <AvatarFallback>{comment.author.username[0].toUpperCase()}</AvatarFallback>
+              //       </Avatar>
+              //       <div>
+              //         <p className="font-semibold">{comment.author.username}</p>
+              //         <p className="text-xs text-gray-500">{format(new Date(parseInt(comment.createdAt)), 'PPP')}</p>
+              //       </div>
+              //     </div>
+              //     <p>{comment.content}</p>
+              //   </div>
+              // ))
+            }
           </CardContent>
         </Card>
       </div>
-    </div>)
+    </div>
   );
 }
 
 function PostSkeleton() {
   return (
-    (<div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
       <Skeleton className="h-10 w-20 mb-4" />
       <Card>
         <CardHeader>
@@ -198,6 +233,6 @@ function PostSkeleton() {
           <Skeleton className="h-20 w-full" />
         </CardContent>
       </Card>
-    </div>)
+    </div>
   );
 }

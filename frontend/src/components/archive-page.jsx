@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from 'lucide-react'
-import FETCH_POSTS from '@/graphql/query/postsGql'
+import {FETCH_POSTS} from '@/graphql/query/postsGql'
+import Loader from './loader/Loader'
+import { NavLink } from 'react-router-dom'
 
 export function ArchivePageJsx() {
   const { isDarkMode } = useContext(ThemeContext)
@@ -39,7 +40,7 @@ export function ArchivePageJsx() {
     }
   }, [data, selectedCategory])
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  if (loading) return <div className="flex justify-center items-center h-screen"><Loader className="h-8 w-8" /></div>;
   if (error) return <div className="text-center text-red-500">Error loading archived posts: {error.message}</div>;
 
   const categories = ['all', ...new Set(data.posts.map(post => post.category))]
@@ -85,7 +86,7 @@ export function ArchivePageJsx() {
                             <li key={post._id} className="flex justify-between items-center">
                               <span>{post.title}</span>
                               <Button variant="outline" size="sm" asChild>
-                                <a href={`/post/${post._id}`}>Read</a>
+                                <NavLink to={`/post/${post._id}`}>Read</NavLink>
                               </Button>
                             </li>
                           ))}

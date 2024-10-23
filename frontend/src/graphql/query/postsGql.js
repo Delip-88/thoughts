@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client";
 
-const FETCH_POSTS = gql`
+export const FETCH_POSTS = gql`
   query FETCH_POSTS {
     posts {
       _id
@@ -8,10 +8,10 @@ const FETCH_POSTS = gql`
       content
       category
       tags
-      likes{
+      likes {
         _id
       }
-      image{
+      image {
         public_id
         secure_url
       }
@@ -19,7 +19,7 @@ const FETCH_POSTS = gql`
       author {
         _id
         username
-        image{
+        image {
           public_id
           secure_url
         }
@@ -28,4 +28,30 @@ const FETCH_POSTS = gql`
   }
 `;
 
-export default FETCH_POSTS;
+export const FETCH_POST_BY_ID = gql`
+  query post($id: ID!) {
+    post(id: $id) {
+      _id
+      title
+      content
+      category
+      tags
+      createdAt
+      image {
+        public_id
+        secure_url
+      }
+      likes{
+        _id
+      }
+      author {
+        _id
+        username
+        image {
+          public_id
+          secure_url
+        }
+      }
+    }
+  }
+`;

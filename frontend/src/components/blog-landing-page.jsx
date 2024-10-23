@@ -4,9 +4,9 @@ import React, { useContext, useEffect, useState } from "react";
 import { LogIn, UserPlus, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@apollo/client";
-import FETCH_POSTS from "@/graphql/query/postsGql";
 import Loader from "./loader/Loader";
 import PostTime from "@/utils/PostTime";
+import { FETCH_POSTS } from "@/graphql/query/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
 
 import { AdvancedImage } from "@cloudinary/react";

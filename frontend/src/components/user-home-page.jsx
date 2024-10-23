@@ -1,9 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client";
-import FETCH_POSTS from "@/graphql/query/postsGql";
+import {FETCH_POSTS} from "@/graphql/query/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
-import Loader from "./loader/Loader";
 import PostTime from "@/utils/PostTime";
 import { ADD_LIKE } from "@/graphql/mutations/likesGql";
 
