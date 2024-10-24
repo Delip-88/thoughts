@@ -118,7 +118,7 @@ export function PostPage() {
               <AdvancedImage
                 cldImg={blogImage}
                 alt={post.title} // Use movie title for accessibility
-                className="w-full h-auto rounded-lg shadow-lg mb-4"
+                 className="w-full max-h-[350px] rounded-xl overflow-hidden shadow-lg mb-4 object-center object-contain"
               />
             )}
             <p className="whitespace-pre-wrap">{post.content}</p>
