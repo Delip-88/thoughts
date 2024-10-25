@@ -153,7 +153,7 @@ export function UserHomePageJsx() {
                               <PostTime createdAt={post.createdAt} />
                             </div>
                           </div>
-                          <p className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
+                          <p className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white cursor-pointer" onClick={()=>navigate(`/post/${post._id}`)}>
                             {post.title}
                           </p>
                           {post.image && blogImage && (

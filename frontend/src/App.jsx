@@ -28,12 +28,12 @@ const App = () => {
       <ToastContainer />
       <Routes>
         {/* Public Routes */}
+        <Route path="/post/:id" element={<PostPage />} />
         <Route path="/" element={<Layout />}>
           <Route path="/" index element={<BlogLandingPageJsx />} />
           <Route path="/login" element={<LoginPageJsx />} />
           <Route path="/about" element={<AboutPageJsx />} />
           <Route path="/archive" element={<ArchivePageJsx />} />
-          <Route path="/post/:id" element={<PostPage />} />
           <Route path="/contact" element={<ContactPageJsx />} />
           <Route path="/register" element={<RegisterPageJsx />} />
           <Route
@@ -63,8 +63,10 @@ const App = () => {
           <Route path="/profile" element={<ViewProfile />} />
           <Route path="/create-post" element={<WriteNewPost />} />
           <Route path="/edit-profile" element={<EditProfilePageJsx />} />
-          <Route path="/user-profile/:id" element={<UserProfilePageComponent />} />
-
+          <Route
+            path="/user-profile/:id"
+            element={<UserProfilePageComponent />}
+          />
           {/* Handle any random URL after login */}
           <Route path="*" element={<PageNotFoundComponent />} />
         </Route>

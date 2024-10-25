@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useContext, useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Mail,
@@ -17,7 +17,7 @@ import { ThemeContext } from "@/middleware/ThemeContext";
 import DELETE_POST_BY_ID from "@/graphql/mutations/deletePostGql";
 import { toast } from "react-toastify";
 import Loader from "./loader/Loader";
-import {FETCH_POSTS} from "@/graphql/query/postsGql";
+import { FETCH_POSTS } from "@/graphql/query/postsGql";
 import ME_QUERY from "@/graphql/query/meGql";
 
 import { AdvancedImage } from "@cloudinary/react";
@@ -113,22 +113,29 @@ const MoreOptions = ({ onDelete }) => {
 
 export function ViewProfile() {
   const [posts, setPosts] = useState([]);
+  const [expandedPosts, setExpandedPosts] = useState({}); // Track expanded posts
   const { user, cid } = useContext(AuthContext);
+  const navigate = useNavigate()
   const { isDarkMode } = useContext(ThemeContext);
 
-  const [
-    deletePost,
-    { error: deleteError, loading: deleteLoading },
-  ] = useMutation(DELETE_POST_BY_ID, {
-    refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
-    awaitRefetchQueries: true,
-  });
+  const [deletePost, { error: deleteError, loading: deleteLoading }] =
+    useMutation(DELETE_POST_BY_ID, {
+      refetchQueries: [{ query: FETCH_POSTS }, { query: ME_QUERY }],
+      awaitRefetchQueries: true,
+    });
 
   useEffect(() => {
     if (user) {
       setPosts(user.posts);
     }
   }, [user]);
+
+  const toggleExpand = (postId) => {
+    setExpandedPosts((prevState) => ({
+      ...prevState,
+      [postId]: !prevState[postId],
+    }));
+  };
 
   const handleDeletePost = async (postId) => {
     if (!confirm("Are you sure to delete this post?")) {
@@ -290,73 +297,88 @@ export function ViewProfile() {
                   <h2 className="text-2xl font-bold mb-4">My Posts</h2>
                   <div className="space-y-6">
                     {posts.length > 0 ? (
-                      [...posts].sort((a,b)=>b.createdAt - a.createdAt).map((post) => {
+                      [...posts]
+                        .sort((a, b) => b.createdAt - a.createdAt)
+                        .map((post) => {
+                          const blogImage = post.image.public_id
+                            ? cid
+                                .image(post.image.public_id)
+                                .resize(fill().width(800).height(384))
+                                .format("auto")
+                            : null;
+                          const isExpanded = expandedPosts[post._id];
+                          const contentToShow = isExpanded
+                            ? post.content
+                            : post.content.slice(0, 150) +
+                              (post.content.length > 150 ? "..." : "");
 
-                    const blogImage = post.image.public_id
-                      ? cid
-                          .image(post.image.public_id)
-                          .resize(fill().width(800).height(384))
-                          .format("auto")
-                      : null;
-                        return (
-                        <div
-                          key={post._id}
-                          className={`${
-                            isDarkMode ? "bg-gray-800" : "bg-white"
-                          } shadow rounded-lg p-6 relative`}
-                        >
-                          
-                            <PostTime createdAt={post.createdAt} />
-                          <div className="absolute top-2 right-2">
-                            <MoreOptions
-                              onDelete={() => handleDeletePost(post._id)}
-                            />
-                          </div>
-                          <h3 className="text-xl font-semibold mb-2">
-                            {post.title}
-                          </h3>
-                          {post.image && blogImage && (
-                            <AdvancedImage
-                              cldImg={blogImage}
-                              alt={post.title} // Use movie title for accessibility
-                              className="w-full h-auto rounded-lg shadow-lg mb-4"
-                            />
-                          )}
-                           <div className="flex flex-wrap gap-2 mb-4">
-                            {post.tags?.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                          return (
+                            <div
+                              key={post._id}
+                              className={`${
+                                isDarkMode ? "bg-gray-800" : "bg-white"
+                              } shadow rounded-lg p-6 relative`}
+                            >
+                              <PostTime createdAt={post.createdAt} />
+                              <div className="absolute top-2 right-2">
+                                <MoreOptions
+                                  onDelete={() => handleDeletePost(post._id)}
+                                />
+                              </div>
+                              <h3 className="text-xl font-semibold mb-2 cursor-pointer" onClick={()=>navigate(`/post/${post._id}`)}>
+                                {post.title}
+                              </h3>
+                              {post.image && blogImage && (
+                                <AdvancedImage
+                                  cldImg={blogImage}
+                                  alt={post.title} // Use movie title for accessibility
+                                  className="w-full h-auto rounded-lg shadow-lg mb-4"
+                                />
+                              )}
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {post.tags?.map((tag, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                              <p
+                                className={`${
+                                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                                } mb-4`}
                               >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                          <p
-                            className={`${
-                              isDarkMode ? "text-gray-300" : "text-gray-600"
-                            } mb-4`}
-                          >
-                            {post.content}
-                          </p>
-                          <div
-                            className={`flex justify-between items-center text-sm ${
-                              isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                          >
-                            <span>
-                              {new Date(
-                                parseInt(post.createdAt)
-                              ).toLocaleDateString()}
-                            </span>
-                            <div>
-                              <span className="mr-4">
-                                {post.likes?.length} Likes
-                              </span>
+                                {contentToShow}
+                              </p>
+                              {post.content.length > 150 && (
+                                <button
+                                  onClick={() => toggleExpand(post._id)}
+                                  className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary hover:underline"
+                                >
+                                  {isExpanded ? "Read Less" : "Read More"}
+                                </button>
+                              )}
+                              <div
+                                className={`flex justify-between items-center text-sm ${
+                                  isDarkMode ? "text-gray-400" : "text-gray-500"
+                                }`}
+                              >
+                                <span>
+                                  {new Date(
+                                    parseInt(post.createdAt)
+                                  ).toLocaleDateString()}
+                                </span>
+                                <div>
+                                  <span className="mr-4">
+                                    {post.likes?.length} Likes
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      )})
+                          );
+                        })
                     ) : (
                       <p
                         className={`${
