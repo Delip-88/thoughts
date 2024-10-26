@@ -109,8 +109,15 @@ const postSchema = new mongoose.Schema({
       "entertainment",
       "other",
     ],
-    required: true,
+    required: [true, "Category is required"],
   },
+  comments: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Comment",
+    },
+  ],
+
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -138,6 +145,39 @@ const postSchema = new mongoose.Schema({
   ],
 }, { timestamps: true });
 
+const commentSchema = new mongoose.Schema({
+  postId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+    required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  content: {
+    type: String,
+    required: true,
+  },
+  // replies: [
+  //   {
+  //     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  //     content: { type: String, required: true },
+  //     createdAt: { type: Date, default: Date.now },
+  //   }
+  // ],
+  // likes: [
+  //   {
+  //     type: mongoose.Schema.Types.ObjectId,
+  //     ref: 'User',
+  //   },
+  // ],
+},{timestamps: true});
+
+
+
 // Export the models using ES module syntax
 export const User = mongoose.model("User", userSchema);
 export const Post = mongoose.model("Post", postSchema);
+export const Comment= mongoose.model("Comment", commentSchema);

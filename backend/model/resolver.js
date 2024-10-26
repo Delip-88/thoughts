@@ -1,4 +1,4 @@
-import { User, Post } from "./mongoSchema.js"; // Import the actual models
+import { User, Post, Comment } from "./mongoSchema.js"; // Import the actual models
 import { generateToken } from "../utils/token.js";
 import { sendEmail } from "../config/email_type.js";
 import jwt from "jsonwebtoken";
@@ -10,9 +10,9 @@ import {
   setUserCookie,
   deleteSignature,
   uploadSignature,
+  getCommentsById,
 } from "../utils/functions.js";
 
-import mongoose from "mongoose";
 
 const protectedRoute = async (context) => {
   const user = await resolvers.Query.checkAuth(null, null, context);
@@ -41,8 +41,6 @@ const resolvers = {
     },
     async user(_, { id }, context) {
       await protectedRoute(context);
-      console.log("inside")
-      console.log(id)
       return getDataById(User, id); // Fetch a user by ID
     },
     posts() {
@@ -50,6 +48,12 @@ const resolvers = {
     },
     post(_, { id }) {
       return getDataById(Post, id); // Fetch a post by ID
+    },
+    comments(){
+      return getData(Comment)
+    },
+    comment(_,{postId}){
+      return getCommentsById(Comment,postId)
     },
     async checkAuth(parameter, args, { req }) {
       const token = req.cookies.authToken;
@@ -77,6 +81,9 @@ const resolvers = {
       // Fetch posts where the author's ID matches the user's _id
       return await Post.find({ author: parent._id });
     },
+    async comments(parent){
+      return await Comment.find({userId: parent._id})
+    },
   },
 
   // Resolve `author` for a Post
@@ -85,9 +92,47 @@ const resolvers = {
       // Fetch the user (author) based on the authorId field in the post
       return await User.findById(parent.author);
     },
+    async comments(parent){
+      return await Comment.find({postId: parent._id})
+    }
   },
+  
+  Comment: {
+    async commentedBy(parent){
+      return await User.findById(parent.userId)
+    },
+  }
+  ,
 
   Mutation: {
+    async addComment(_, { postId, userId, content }, context) {
+      const user = await protectedRoute(context);
+    
+      try {
+        // Create and save the new comment
+        const newComment = new Comment({ postId, userId, content });
+        const savedComment = await newComment.save();
+    
+        // Update User with the new comment
+        await User.findByIdAndUpdate(
+          user._id,
+          { $push: { comments: savedComment._id } },
+          { new: true }
+        );
+    
+        // Update Post with the new comment
+        await Post.findByIdAndUpdate(
+          postId,
+          { $push: { comments: savedComment._id } },
+          { new: true }
+        );
+    
+        return { message: "Commented successfully", success: true };
+      } catch (err) {
+        throw new Error(`Failed to post comment: ${err.message}`);
+      }
+    },
+
     async getUploadSignature(
       _,
       { tags, upload_preset, uploadFolder },

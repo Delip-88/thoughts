@@ -12,6 +12,7 @@ export const typeDefs = `#graphql
         verificationToken: String
         verificationTokenExpiresAt: String
         createdAt: String
+        comments: [Comment!]
     }
 
     type AuthPayload{
@@ -28,7 +29,16 @@ export const typeDefs = `#graphql
         likes: [User!]     # likes by userId
         createdAt: String
         image: Image
+        comments: [Comment!]
 
+    }
+    type Comment{
+        _id: ID!
+        postId: ID!
+        userId: ID!
+        commentedBy: User!        
+        content: String!
+        createdAt: String
     }
     type Image{
         public_id: String
@@ -46,6 +56,8 @@ export const typeDefs = `#graphql
         user(id: ID!): User 
         posts: [Post!]
         post(id: ID!): Post
+        comments: [Comment!]
+        comment(postId: ID!): [Comment!]
         checkAuth(id: ID!): User
         me: User
     }
@@ -56,6 +68,7 @@ export const typeDefs = `#graphql
         deletePost(id: ID!): Response!
         updateUser(user: updateUser!): Response!
         updatePost(post: updatePost!): Post
+        addComment(postId: ID!, userId: ID!,content: String!): Response!
         likeOnPost(id: ID!): Response!
         login(usernameoremail: String!, password: String!): AuthPayload!
         logout: Response!

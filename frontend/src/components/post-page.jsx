@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client";
 import { format } from "date-fns";
 import { Heart, MessageCircle, Share2, ArrowLeft } from "lucide-react";
 import { AuthContext } from "@/middleware/AuthContext";
 import { ThemeContext } from "@/middleware/ThemeContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,24 +23,51 @@ import { toast } from "react-toastify";
 import { FETCH_POST_BY_ID } from "@/graphql/query/postsGql";
 
 import { AdvancedImage } from "@cloudinary/react";
+import { ADD_COMMENT } from "@/graphql/mutations/likesGql";
+import { VIEW_POST_COMMENTS } from "@/graphql/query/commentsGql";
+import PostTime from "@/utils/PostTime";
 
 export function PostPage() {
   const { id } = useParams();
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const { user: currentUser, cid } = useContext(AuthContext);
   const { isDarkMode } = useContext(ThemeContext);
   const [comment, setComment] = useState("");
 
-  const { loading, error, data } = useQuery(FETCH_POST_BY_ID, {
+  const [allComments, setAllComments] = useState(null);
+
+  const {
+    loading: postLoading,
+    error,
+    data,
+  } = useQuery(FETCH_POST_BY_ID, {
     variables: { id },
     fetchPolicy: "network-only",
   });
 
-  // const [likePost] = useMutation(LIKE_POST);
-  // const [addComment] = useMutation(ADD_COMMENT);
+  const { loading: loadingComments, data: commentData } = useQuery(
+    VIEW_POST_COMMENTS,
+    {
+      variables: { postId: id },
+      fetchPolicy: "network-only",
+    }
+  );
 
-  if (loading) return <PostSkeleton />;
-  if (error) return <div>Error loading post: {error.message}</div>;
+  useEffect(() => {
+    if (commentData) {
+      setAllComments(commentData.comment);
+    }
+  }, [commentData]);
+
+  // const [likePost] = useMutation(LIKE_POST);
+  const [addComment] = useMutation(ADD_COMMENT);
+
+  if (postLoading) return <PostSkeleton />;
+  if (error) {
+    return <div>Error loading post: {error.message}</div>;
+  }
+
   if (!data || !data.post) return <div>Post not found</div>;
 
   const { post } = data;
@@ -56,15 +83,32 @@ export function PostPage() {
 
   const handleComment = async (e) => {
     e.preventDefault();
-    // if (!comment.trim()) return;
+    if (!comment.trim()) return;
 
-    // try {
-    //   await addComment({ variables: { postId: post._id, content: comment } });
-    //   setComment('');
-    //   toast.success('Comment added successfully!');
-    // } catch (err) {
-    //   toast.error('Failed to add comment. Please try again.');
-    // }
+    try {
+      const response = await addComment({
+        variables: {
+          postId: id,
+          userId: user._id,
+          content: comment,
+        },
+      });
+      const {
+        message,
+        success,
+        comment: newComment,
+      } = await response.data?.addComment; // Assuming you return the new comment here
+      if (success) {
+        toast.success(message);
+        setAllComments((prev) => [...prev, newComment]); // Add new comment to the existing list
+      } else {
+        toast.error("Comment failed!");
+      }
+      setComment("");
+    } catch (err) {
+      toast.error("Failed to add comment. Please try again.");
+      console.error(err.message);
+    }
   };
 
   const handleShare = () => {
@@ -78,6 +122,39 @@ export function PostPage() {
   const blogImage = post.image?.public_id
     ? cid.image(post.image.public_id).format("auto")
     : null;
+
+  const CommentBox = () =>
+    allComments?.length > 0 ? (
+      allComments.map((comment) => (
+        <div
+          key={comment._id}
+          className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-700"
+        >
+          <div className="flex items-center space-x-2 mb-2">
+            <Avatar>
+              <AvatarImage
+                src={comment.commentedBy.image?.secure_url}
+                alt={comment.commentedBy.username}
+                className="w-10 h-10 rounded-full object-cover cursor-pointer"
+              />
+              <AvatarFallback>
+                {comment.commentedBy.username[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold">{comment.commentedBy.username}</p>
+              <p className="text-xs text-gray-500">
+                <PostTime createdAt={comment.createdAt} />
+              </p>
+            </div>
+          </div>
+          <p>{comment.content}</p>
+        </div>
+      ))
+    ) : (
+      <p>No Comments</p>
+    );
+
   return (
     <div
       className={`min-h-screen w-full ${
@@ -114,11 +191,11 @@ export function PostPage() {
             </div>
           </CardHeader>
           <CardContent>
-            { blogImage && (
+            {blogImage && (
               <AdvancedImage
                 cldImg={blogImage}
                 alt={post.title} // Use movie title for accessibility
-                 className="w-full max-h-[350px] rounded-xl overflow-hidden shadow-lg mb-4 object-center object-contain"
+                className="w-full max-h-[350px] rounded-xl overflow-hidden shadow-lg mb-4 object-center object-contain"
               />
             )}
             <p className="whitespace-pre-wrap">{post.content}</p>
@@ -147,7 +224,7 @@ export function PostPage() {
               </Button>
               <Button variant="ghost">
                 <MessageCircle className="mr-2 h-4 w-4" />
-                {/* {post.comments.length } */} 0
+                {allComments ? allComments.length : 0}
               </Button>
             </div>
             <Button variant="ghost" onClick={handleShare}>
@@ -162,36 +239,27 @@ export function PostPage() {
             <CardTitle>Comments</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleComment} className="mb-4">
-              <Textarea
-                placeholder="Add a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="mb-2"
-              />
-              <Button type="submit" disabled={!comment.trim()}>
-                Post Comment
-              </Button>
-            </form>
-            {
-              // post.comments.map((comment) => (
-              //   <div
-              //     key={comment._id}
-              //     className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-700">
-              //     <div className="flex items-center space-x-2 mb-2">
-              //       <Avatar>
-              //         <AvatarImage src={comment.author.image?.secure_url} alt={comment.author.username} />
-              //         <AvatarFallback>{comment.author.username[0].toUpperCase()}</AvatarFallback>
-              //       </Avatar>
-              //       <div>
-              //         <p className="font-semibold">{comment.author.username}</p>
-              //         <p className="text-xs text-gray-500">{format(new Date(parseInt(comment.createdAt)), 'PPP')}</p>
-              //       </div>
-              //     </div>
-              //     <p>{comment.content}</p>
-              //   </div>
-              // ))
-            }
+            {!user && (
+              <p className="text-sm text-gray-300">Login to comment...</p>
+            )}
+            {user && (
+              <form onSubmit={handleComment} className="mb-4">
+                <Textarea
+                  placeholder="Add a comment..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="mb-2"
+                />
+                <Button type="submit" disabled={!comment.trim()}>
+                  Post Comment
+                </Button>
+              </form>
+            )}{" "}
+            {loadingComments ? (
+              <p className="text-sm text-gray-200">Loading Comments....</p>
+            ) : (
+              <CommentBox />
+            )}
           </CardContent>
         </Card>
       </div>

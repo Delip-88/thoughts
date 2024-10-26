@@ -5,7 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 // Generic function to get data from a collection (model)
 export const getData = async (collection) => {
   try {
-    const data = await collection.find(); // Use the actual model to query
+    const data = await collection.find().lean(); // Use the actual model to query
     return data;
   } catch (err) {
     console.error(err.message);
@@ -26,6 +26,24 @@ export const getDataById = async (collection, id) => {
     throw new Error("Failed to fetch data by ID");
   }
 };
+
+
+export const getCommentsById = async (collection, postId) => {
+  try {
+    // Convert postId to ObjectId
+    const objectId = new mongoose.Types.ObjectId(postId);
+
+    const data = await collection.find({ postId: objectId }).lean(); // Use find() if expecting multiple comments
+    console.log("Comments found:", data);
+    
+    // Return comments if found, otherwise null
+    return data.length ? data : null;
+  } catch (err) {
+    console.error(err.message);
+    throw new Error("Failed to fetch Post Comments By PostId");
+  }
+};
+
 
 export const generateResetToken = () => {
   const token = crypto.randomBytes(32).toString("hex");
