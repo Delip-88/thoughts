@@ -173,7 +173,7 @@ export function ViewProfile() {
     );
 
   const publicId =
-    user.image.public_id ||
+    user.image?.public_id ||
     "4213460-account-avatar-head-person-profile-user_115386_lm2sl1";
 
   const userImage = cid
@@ -300,7 +300,7 @@ export function ViewProfile() {
                       [...posts]
                         .sort((a, b) => b.createdAt - a.createdAt)
                         .map((post) => {
-                          const blogImage = post.image.public_id
+                          const blogImage = post.image?.public_id
                             ? cid
                                 .image(post.image.public_id)
                                 .resize(fill().width(800).height(384))

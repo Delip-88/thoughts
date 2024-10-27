@@ -165,7 +165,7 @@ export function EditProfilePageJsx() {
       try {
         let imageData = null;
         let updatedImageProps = user.image; // Start with the current user image
-        let currentImageId = user.image.public_id || null
+        let currentImageId = user.image?.public_id || null
 
         // Check if a new image is uploaded
         if (formData.image) {

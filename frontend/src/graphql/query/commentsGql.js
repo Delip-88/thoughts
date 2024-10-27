@@ -7,6 +7,7 @@ query comment($postId: ID!) {
         postId
         userId
         commentedBy {
+            _id
             username
             image {
                 public_id
