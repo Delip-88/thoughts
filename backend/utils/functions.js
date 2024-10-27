@@ -34,7 +34,6 @@ export const getCommentsById = async (collection, postId) => {
     const objectId = new mongoose.Types.ObjectId(postId);
 
     const data = await collection.find({ postId: objectId }).lean(); // Use find() if expecting multiple comments
-    console.log("Comments found:", data);
     
     // Return comments if found, otherwise null
     return data.length ? data : null;
@@ -103,7 +102,7 @@ const deleteImage = async (publicId) => {
 
     return response;
   } catch (err) {
-    console.log("Error deleting image: ", err);
+    console.error("Error deleting image: ", err);
     throw new Error(err.message);
   }
 };

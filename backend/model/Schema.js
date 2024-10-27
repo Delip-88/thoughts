@@ -68,7 +68,7 @@ export const typeDefs = `#graphql
         deletePost(id: ID!): Response!
         updateUser(user: updateUser!): Response!
         updatePost(post: updatePost!): Post
-        addComment(postId: ID!, userId: ID!,content: String!): Response!
+        addComment(postId: ID!, userId: ID!,content: String!): CommentResponse!
         likeOnPost(id: ID!): Response!
         login(usernameoremail: String!, password: String!): AuthPayload!
         logout: Response!
@@ -87,6 +87,11 @@ export const typeDefs = `#graphql
     type Response{
         message: String!
         success: Boolean!
+    }
+    type CommentResponse{
+        message: String!
+        success: Boolean!
+        comment: Comment!
     }
     input userInput{
         username: String!

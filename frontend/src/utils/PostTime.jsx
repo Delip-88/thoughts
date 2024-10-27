@@ -7,9 +7,9 @@ const PostTime = ({ createdAt }) => {
   const timeAgo = formatDistanceToNow(date, { addSuffix: true }).replace(/^about\s/, '');
 
   return (
-    <p className="text-sm text-gray-500 dark:text-gray-400">
+    <div className="text-sm text-gray-500 dark:text-gray-400">
       {isNaN(date) ? 'Invalid date' : timeAgo}
-    </p>
+    </div>
   );
 };
 

@@ -127,7 +127,7 @@ const resolvers = {
           { new: true }
         );
     
-        return { message: "Commented successfully", success: true };
+        return { message: "Commented successfully", success: true , comment: savedComment};
       } catch (err) {
         throw new Error(`Failed to post comment: ${err.message}`);
       }
@@ -173,8 +173,6 @@ const resolvers = {
           { $push: { posts: savedPost._id } },
           { new: true }
         );
-
-        console.log("post created");
 
         return { message: "Post successfully created!", success: true };
       } catch (err) {
@@ -237,7 +235,6 @@ const resolvers = {
 
     async likeOnPost(_, { id }, context) {
       const loggedUser = await protectedRoute(context);
-      console.log(id)
       const post = await Post.findById(id);
     
       if (!post) {
@@ -350,14 +347,14 @@ const resolvers = {
 
         // Check if user exists and the verification token matches the provided code
         if (!user || user.verificationToken !== code) {
-          console.log("Invalid Code");
+          console.error("Invalid Code");
           throw new Error("Invalid Code");
         }
 
         // Check if the verification token has expired
         const tokenExpirationDate = new Date(user.verificationTokenExpiresAt);
         if (tokenExpirationDate < new Date()) {
-          console.log("Verification code has expired");
+          console.error("Verification code has expired");
           throw new Error("Verification code has expired");
         }
 
@@ -382,7 +379,7 @@ const resolvers = {
         const token = generateToken(user);
         setUserCookie(token, context);
         // Log the success
-        console.log("User verified and welcome email sent.");
+        // console.log("User verified and welcome email sent.");
 
         // Return the user object, excluding the password field
         return {
@@ -429,7 +426,7 @@ const resolvers = {
           `${process.env.CLIENT_URL}/reset-password/${passwordResetToken}` // Reset link
         );
 
-        console.log("Password reset email sent");
+        // console.log("Password reset email sent");
         return {
           message: "Password reset link sended to your email.",
           success: true,

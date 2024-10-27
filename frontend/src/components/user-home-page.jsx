@@ -112,13 +112,13 @@ export function UserHomePageJsx() {
                   .sort((a, b) => b.createdAt - a.createdAt)
                   .map((post, i) => {
                     const isLiked = post.likes.includes(user._id); // Check if the user has liked the post
-                    const authorImage = post.author.image.public_id
+                    const authorImage = post.author.image?.public_id
                       ? cid
                           .image(post.author.image.public_id)
                           .resize(fill().width(40).height(40))
                           .format("auto")
                       : null;
-                    const blogImage = post.image.public_id
+                    const blogImage = post.image?.public_id
                       ? cid
                           .image(post.image.public_id)
                           .resize(fill().width(800).height(384))

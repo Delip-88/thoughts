@@ -27,6 +27,38 @@ import { ADD_COMMENT } from "@/graphql/mutations/likesGql";
 import { VIEW_POST_COMMENTS } from "@/graphql/query/commentsGql";
 import PostTime from "@/utils/PostTime";
 
+ const CommentBox = ({allComments}) =>
+  allComments?.length > 0 ? (
+    [...allComments].sort((a,b)=> b.createdAt - a.createdAt).map((comment) => (
+      <div
+        key={comment._id}
+        className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-700"
+      >
+        <div className="flex items-center space-x-2 mb-2">
+          <Avatar>
+            <AvatarImage
+              src={comment.commentedBy.image?.secure_url}
+              alt={comment.commentedBy.username}
+              className="w-10 h-10 rounded-full object-cover cursor-pointer"
+            />
+            <AvatarFallback>
+              {comment.commentedBy.username[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-semibold">{comment.commentedBy.username}</p>
+            <div className="text-xs text-gray-500">
+              <PostTime createdAt={comment.createdAt} />
+            </div>
+          </div>
+        </div>
+        <p>{comment.content}</p>
+      </div>
+    ))
+  ) : (
+    <p>No Comments</p>
+  );
+
 export function PostPage() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
@@ -123,37 +155,7 @@ export function PostPage() {
     ? cid.image(post.image.public_id).format("auto")
     : null;
 
-  const CommentBox = () =>
-    allComments?.length > 0 ? (
-      allComments.map((comment) => (
-        <div
-          key={comment._id}
-          className="mb-4 p-4 rounded-lg bg-gray-100 dark:bg-gray-700"
-        >
-          <div className="flex items-center space-x-2 mb-2">
-            <Avatar>
-              <AvatarImage
-                src={comment.commentedBy.image?.secure_url}
-                alt={comment.commentedBy.username}
-                className="w-10 h-10 rounded-full object-cover cursor-pointer"
-              />
-              <AvatarFallback>
-                {comment.commentedBy.username[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold">{comment.commentedBy.username}</p>
-              <p className="text-xs text-gray-500">
-                <PostTime createdAt={comment.createdAt} />
-              </p>
-            </div>
-          </div>
-          <p>{comment.content}</p>
-        </div>
-      ))
-    ) : (
-      <p>No Comments</p>
-    );
+
 
   return (
     <div
@@ -258,7 +260,7 @@ export function PostPage() {
             {loadingComments ? (
               <p className="text-sm text-gray-200">Loading Comments....</p>
             ) : (
-              <CommentBox />
+              <CommentBox allComments={allComments} />
             )}
           </CardContent>
         </Card>

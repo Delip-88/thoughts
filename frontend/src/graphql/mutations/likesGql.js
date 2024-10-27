@@ -9,11 +9,24 @@ export const ADD_LIKE = gql`
   }
 `;
 export const ADD_COMMENT = gql`
-  mutation AddComment($postId: ID!, $userId: ID!, $content: String!) {
-    addComment(postId: $postId, userId: $userId, content: $content) {
-      message
-      success
+mutation AddComment($postId: ID!, $userId: ID!, $content: String!) {
+  addComment(postId: $postId, userId: $userId, content: $content) {
+    success
+    message
+    comment {
+      _id
+      content
+      createdAt
+      commentedBy {
+        _id
+        username
+        image {
+          secure_url
+        }
+      }
     }
   }
+}
+
 `;
 

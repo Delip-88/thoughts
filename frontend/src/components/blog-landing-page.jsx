@@ -120,13 +120,13 @@ export function BlogLandingPageJsx() {
                 [...posts]
                   .sort((a, b) => b.createdAt - a.createdAt)
                   .map((post, i) => {
-                    const authorImage = post.author.image.public_id
+                    const authorImage = post.author.image?.public_id
                       ? cid
                           .image(post.author.image.public_id)
                           .resize(fill().width(40).height(40))
                           .format("auto")
                       : null;
-                    const blogImage = post.image.public_id
+                    const blogImage = post.image?.public_id
                       ? cid
                           .image(post.image.public_id)
                           .resize(fill().width(800).height(384))
@@ -158,7 +158,10 @@ export function BlogLandingPageJsx() {
                               <PostTime createdAt={post.createdAt} />
                             </div>
                           </div>
-                          <h4 className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white">
+                          <h4
+                            className="text-xl mt-1 font-bold mb-4 text-gray-900 dark:text-white cursor-pointer"
+                            onClick={() => navigate(`/post/${post._id}`)}
+                          >
                             {post.title}
                           </h4>
                           {post.image && blogImage && (
@@ -185,13 +188,15 @@ export function BlogLandingPageJsx() {
                           </p>
                           <div className="flex justify-between items-center">
                             <div className="relative">
-                              <Button
-                                variant="link"
-                                className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
-                                onClick={() => toggleExpand(i)}
-                              >
-                                {expanded[i] ? "Read Less" : "Read More"}
-                              </Button>
+                              {post.content.length > 200 && (
+                                <Button
+                                  variant="link"
+                                  className="p-0 transition-transform duration-200 ease-in-out hover:translate-x-1 text-primary"
+                                  onClick={() => toggleExpand(i)}
+                                >
+                                  {expanded[i] ? "Read Less" : "Read More"}
+                                </Button>
+                              )}
                             </div>
 
                             <button
