@@ -97,7 +97,12 @@ export function BlogLandingPageJsx() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 animate-fadeInUp animation-delay-400">
-                <Button className="w-full sm:w-auto">Latest Posts</Button>
+                <Button className="w-full sm:w-auto" onClick={()=>{
+                  window.scrollBy({
+                    top: window.innerHeight * 0.8,
+                    behavior: "smooth"
+                  })
+                }}>Latest Posts</Button>
                 <Button
                   variant="outline"
                   className="w-full sm:w-auto"

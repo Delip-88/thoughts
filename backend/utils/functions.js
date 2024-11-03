@@ -115,6 +115,7 @@ export const uploadSignature = async (tags, upload_preset, uploadFolder) => {
     folder: uploadFolder,
     upload_preset: upload_preset,
     tags: tags || undefined,
+    // moderation: "aws_rek" (disabled because it is paid only) // or "google_video_intelligence" or "cloudinary_ai" depending on your choice
   };
 
   //Generate the signature

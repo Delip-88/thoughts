@@ -482,7 +482,7 @@ const resolvers = {
           $or: [{ username: usernameoremail }, { email: usernameoremail }],
         });
 
-        if (!user) {
+        if (!user || user.verified=== false) {
           throw new Error("Invalid credentials");
         }
 

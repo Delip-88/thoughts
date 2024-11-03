@@ -88,7 +88,6 @@ export function RegisterPageJsx() {
     e.preventDefault();
   
     if (validateForm()) {
-      console.log("Form submitted:", formData);
       try {
         const response = await registerUser({
           variables: {

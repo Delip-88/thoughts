@@ -109,11 +109,13 @@ export function EditProfilePageJsx() {
     image: null,
   });
 
-  const [updateUserInfo, {loading: meLoading }] =
-    useMutation(UPDATE_USER_INFO, {
+  const [updateUserInfo, { loading: meLoading }] = useMutation(
+    UPDATE_USER_INFO,
+    {
       refetchQueries: [{ query: ME_QUERY }],
       awaitRefetchQueries: true,
-    });
+    }
+  );
 
   const [profilePic, setProfilePic] = useState(
     user.image?.secure_url || "/placeholder.svg?height=128&width=128"
@@ -165,7 +167,7 @@ export function EditProfilePageJsx() {
       try {
         let imageData = null;
         let updatedImageProps = user.image; // Start with the current user image
-        let currentImageId = user.image?.public_id || null
+        let currentImageId = user.image?.public_id || null;
 
         // Check if a new image is uploaded
         if (formData.image) {
@@ -191,10 +193,12 @@ export function EditProfilePageJsx() {
             };
 
             // Delete the old image if it exists
-            if (currentImageId && currentImageId !== updatedImageProps.public_id) {
+            if (
+              currentImageId &&
+              currentImageId !== updatedImageProps.public_id
+            ) {
               await deleteImage(cloudName, currentImageId);
             }
-            
           } else {
             // If image upload fails, throw an error
             throw new Error("Image upload failed");
@@ -210,8 +214,6 @@ export function EditProfilePageJsx() {
           bio: formData.bio || user.bio || null,
           image: imageWithoutTypename, // Use the modified image object
         };
-        
-        
 
         const response = await updateUserInfo({
           variables: {

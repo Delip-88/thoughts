@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     default: Date.now, // Adjust to set the expiration window
-    index: { expires: '1h' }, // Automatically remove after 24 hours
+    index: { expires: '15m' }, // Automatically remove after 24 hours
   },
 }, { timestamps: true });
 
