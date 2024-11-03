@@ -58,9 +58,3 @@ const isNudityDetected = (nudityData, threshold = 0.5) => {
   return false;
 };
 
-// Example usage
-checkImageModeration(
-  "https://sightengine.com/assets/img/examples/example7.jpg"
-).then((nudityDetected) => {
-  console.log(`Nudity detected: ${nudityDetected}`);
-});

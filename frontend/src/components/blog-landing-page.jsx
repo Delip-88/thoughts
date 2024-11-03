@@ -97,12 +97,17 @@ export function BlogLandingPageJsx() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 animate-fadeInUp animation-delay-400">
-                <Button className="w-full sm:w-auto" onClick={()=>{
-                  window.scrollBy({
-                    top: window.innerHeight * 0.8,
-                    behavior: "smooth"
-                  })
-                }}>Latest Posts</Button>
+                <Button
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    window.scrollBy({
+                      top: window.innerHeight * 0.8,
+                      behavior: "smooth",
+                    });
+                  }}
+                >
+                  Latest Posts
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full sm:w-auto"
@@ -126,16 +131,10 @@ export function BlogLandingPageJsx() {
                   .sort((a, b) => b.createdAt - a.createdAt)
                   .map((post, i) => {
                     const authorImage = post.author.image?.public_id
-                      ? cid
-                          .image(post.author.image.public_id)
-                          .resize(fill().width(40).height(40))
-                          .format("auto")
+                      ? cid.image(post.author.image.public_id)
                       : null;
                     const blogImage = post.image?.public_id
-                      ? cid
-                          .image(post.image.public_id)
-                          .resize(fill().width(800).height(384))
-                          .format("auto")
+                      ? cid.image(post.image.public_id)
                       : null;
                     return (
                       <div
@@ -173,7 +172,7 @@ export function BlogLandingPageJsx() {
                             <AdvancedImage
                               cldImg={blogImage}
                               alt={post.title} // Use movie title for accessibility
-                              className="w-full h-auto rounded-lg shadow-lg mb-4"
+                              className="w-full max-h-[500px] rounded-xl overflow-hidden shadow-lg mb-4 object-contain"
                             />
                           )}
                           <div className="flex flex-wrap gap-2 mb-4">

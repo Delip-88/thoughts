@@ -122,7 +122,7 @@ export function UserHomePageJsx() {
                       ? cid
                           .image(post.image.public_id)
                           .resize(fill().width(800).height(384))
-                          .format("auto")
+                          
                       : null;
                     return (
                       <div
@@ -160,7 +160,7 @@ export function UserHomePageJsx() {
                             <AdvancedImage
                               cldImg={blogImage}
                               alt={post.title} // Use movie title for accessibility
-                              className="w-full h-auto rounded-lg shadow-lg mb-4"
+                              className="w-full max-h-[500px] rounded-xl overflow-hidden shadow-lg mb-4 object-contain"
                             />
                           )}
                           <div className="flex flex-wrap gap-2 mb-4">

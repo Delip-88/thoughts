@@ -13,7 +13,6 @@ import {
   getCommentsById,
 } from "../utils/functions.js";
 
-
 const protectedRoute = async (context) => {
   const user = await resolvers.Query.checkAuth(null, null, context);
   if (!user) {
@@ -49,11 +48,11 @@ const resolvers = {
     post(_, { id }) {
       return getDataById(Post, id); // Fetch a post by ID
     },
-    comments(){
-      return getData(Comment)
+    comments() {
+      return getData(Comment);
     },
-    comment(_,{postId}){
-      return getCommentsById(Comment,postId)
+    comment(_, { postId }) {
+      return getCommentsById(Comment, postId);
     },
     async checkAuth(parameter, args, { req }) {
       const token = req.cookies.authToken;
@@ -81,8 +80,8 @@ const resolvers = {
       // Fetch posts where the author's ID matches the user's _id
       return await Post.find({ author: parent._id });
     },
-    async comments(parent){
-      return await Comment.find({userId: parent._id})
+    async comments(parent) {
+      return await Comment.find({ userId: parent._id });
     },
   },
 
@@ -92,46 +91,77 @@ const resolvers = {
       // Fetch the user (author) based on the authorId field in the post
       return await User.findById(parent.author);
     },
-    async comments(parent){
-      return await Comment.find({postId: parent._id})
-    }
-  },
-  
-  Comment: {
-    async commentedBy(parent){
-      return await User.findById(parent.userId)
+    async comments(parent) {
+      return await Comment.find({ postId: parent._id });
     },
-  }
-  ,
+  },
 
+  Comment: {
+    async commentedBy(parent) {
+      return await User.findById(parent.userId);
+    },
+  },
   Mutation: {
     async addComment(_, { postId, userId, content }, context) {
       const user = await protectedRoute(context);
-    
+
       try {
         // Create and save the new comment
         const newComment = new Comment({ postId, userId, content });
         const savedComment = await newComment.save();
-    
+
         // Update User with the new comment
         await User.findByIdAndUpdate(
           user._id,
           { $push: { comments: savedComment._id } },
           { new: true }
         );
-    
+
         // Update Post with the new comment
         await Post.findByIdAndUpdate(
           postId,
           { $push: { comments: savedComment._id } },
           { new: true }
         );
-    
-        return { message: "Commented successfully", success: true , comment: savedComment};
+
+        return {
+          message: "Commented successfully",
+          success: true,
+          comment: savedComment,
+        };
       } catch (err) {
         throw new Error(`Failed to post comment: ${err.message}`);
       }
     },
+    async deleteComment(_, { commentId, postId }, context) {
+      const user = await protectedRoute(context);
+    
+      try {
+        // Ensure the comment exists before attempting deletion
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+          throw new Error("Comment not found");
+        }
+    
+        // Delete the comment from the `comments` collection
+        await Comment.findByIdAndDelete(commentId);
+    
+        // Remove the `commentId` reference from the `comments` array in the corresponding post
+        await Post.findByIdAndUpdate(
+          postId,
+          { $pull: { comments: commentId } },
+          { new: true }
+        );
+    
+        return {
+          message: `Comment of id: ${commentId} deleted successfully`,
+          success: true,
+        };
+      } catch (err) {
+        throw new Error(`Failed to delete comment: ${err.message}`);
+      }
+    }, 
+    
 
     async getUploadSignature(
       _,
@@ -150,7 +180,7 @@ const resolvers = {
     async addPost(_, { post }, context) {
       const user = await protectedRoute(context);
 
-      const { title, content, tags, image , category} = post;
+      const { title, content, tags, image, category } = post;
 
       try {
         const newPost = new Post({
@@ -236,23 +266,24 @@ const resolvers = {
     async likeOnPost(_, { id }, context) {
       const loggedUser = await protectedRoute(context);
       const post = await Post.findById(id);
-    
+
       if (!post) {
         throw new Error("Post doesn't exist");
       }
-    
+
       if (post.likes.includes(loggedUser._id)) {
         // Unlike the post
-        post.likes = post.likes.filter(id => id.toString() !== loggedUser._id.toString());
+        post.likes = post.likes.filter(
+          (id) => id.toString() !== loggedUser._id.toString()
+        );
       } else {
         // Like the post
         post.likes.push(loggedUser._id);
       }
-    
+
       await post.save();
       return { message: "Success", success: true };
     },
-    
 
     async deleteUser(_, { id }, context) {
       const user = await protectedRoute(context);
@@ -482,7 +513,7 @@ const resolvers = {
           $or: [{ username: usernameoremail }, { email: usernameoremail }],
         });
 
-        if (!user || user.verified=== false) {
+        if (!user || user.verified === false) {
           throw new Error("Invalid credentials");
         }
 
