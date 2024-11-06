@@ -24,6 +24,24 @@ const protectedRoute = async (context) => {
 // Define your resolvers
 const resolvers = {
   Query: {
+    async checkAuth(parameter, args, { req }) {
+      const token = req.cookies.authToken;
+      if (!token) {
+        throw new Error("No token provided, unauthorized access");
+      }
+
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const user = await User.findById(decoded._id).select("-password");
+        if (!user) {
+          throw new Error("User does not exist");
+        }
+        return user;
+      } catch (err) {
+        console.error("Authentication error:", err.message);
+        throw new Error("Authentication failed");
+      }
+    },
     me: async (_, __, { req }) => {
       // Check if the user is authenticated
       if (!req.user) {
@@ -42,8 +60,8 @@ const resolvers = {
       await protectedRoute(context);
       return getDataById(User, id); // Fetch a user by ID
     },
-    posts() {
-      return getData(Post); // Fetch all posts
+    posts(_, { offset, limit }) {
+      return getData(Post, offset, limit); // Fetch all posts
     },
     post(_, { id }) {
       return getDataById(Post, id); // Fetch a post by ID
@@ -53,24 +71,6 @@ const resolvers = {
     },
     comment(_, { postId }) {
       return getCommentsById(Comment, postId);
-    },
-    async checkAuth(parameter, args, { req }) {
-      const token = req.cookies.authToken;
-      if (!token) {
-        throw new Error("No token provided, unauthorized access");
-      }
-
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        const user = await User.findById(decoded._id).select("-password");
-        if (!user) {
-          throw new Error("User does not exist");
-        }
-        return user;
-      } catch (err) {
-        console.error("Authentication error:", err.message);
-        throw new Error("Authentication failed");
-      }
     },
   },
 
@@ -135,24 +135,24 @@ const resolvers = {
     },
     async deleteComment(_, { commentId, postId }, context) {
       const user = await protectedRoute(context);
-    
+
       try {
         // Ensure the comment exists before attempting deletion
         const comment = await Comment.findById(commentId);
         if (!comment) {
           throw new Error("Comment not found");
         }
-    
+
         // Delete the comment from the `comments` collection
         await Comment.findByIdAndDelete(commentId);
-    
+
         // Remove the `commentId` reference from the `comments` array in the corresponding post
         await Post.findByIdAndUpdate(
           postId,
           { $pull: { comments: commentId } },
           { new: true }
         );
-    
+
         return {
           message: `Comment of id: ${commentId} deleted successfully`,
           success: true,
@@ -160,8 +160,7 @@ const resolvers = {
       } catch (err) {
         throw new Error(`Failed to delete comment: ${err.message}`);
       }
-    }, 
-    
+    },
 
     async getUploadSignature(
       _,

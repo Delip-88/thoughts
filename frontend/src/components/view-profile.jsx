@@ -115,7 +115,7 @@ export function ViewProfile() {
   const [posts, setPosts] = useState([]);
   const [expandedPosts, setExpandedPosts] = useState({}); // Track expanded posts
   const { user, cid } = useContext(AuthContext);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const { isDarkMode } = useContext(ThemeContext);
 
   const [deletePost, { error: deleteError, loading: deleteLoading }] =
@@ -303,7 +303,6 @@ export function ViewProfile() {
                           const blogImage = post.image?.public_id
                             ? cid
                                 .image(post.image.public_id)
-                                .resize(fill().width(800).height(384))
                                 .format("auto")
                             : null;
                           const isExpanded = expandedPosts[post._id];
@@ -325,14 +324,17 @@ export function ViewProfile() {
                                   onDelete={() => handleDeletePost(post._id)}
                                 />
                               </div>
-                              <h3 className="text-xl font-semibold mb-2 cursor-pointer" onClick={()=>navigate(`/post/${post._id}`)}>
+                              <h3
+                                className="text-xl font-semibold mb-2 cursor-pointer"
+                                onClick={() => navigate(`/post/${post._id}`)}
+                              >
                                 {post.title}
                               </h3>
                               {post.image && blogImage && (
                                 <AdvancedImage
                                   cldImg={blogImage}
                                   alt={post.title} // Use movie title for accessibility
-                                  className="w-full h-auto rounded-lg shadow-lg mb-4"
+                                  className="w-full max-h-[300px] rounded-lg shadow-lg mb-4 object-contain"
                                 />
                               )}
                               <div className="flex flex-wrap gap-2 mb-4">

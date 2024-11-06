@@ -54,7 +54,7 @@ export const typeDefs = `#graphql
     type Query{
         users: [User!]
         user(id: ID!): User 
-        posts: [Post!]
+        posts(offset: Int, limit: Int): [Post!]
         post(id: ID!): Post
         comments: [Comment!]
         comment(postId: ID!): [Comment!]

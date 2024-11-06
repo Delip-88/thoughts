@@ -228,7 +228,7 @@ export function PostPage() {
           <section className="w-full py-12 md:py-15 lg:py-25 transition-all ease-linear">
             <div className="container px-4 md:px-6 mx-auto max-w-3xl">
               <div className="space-y-10">
-                <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
+                <Button variant="ghost" className="mb-1" onClick={() => navigate(-1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
@@ -260,7 +260,7 @@ export function PostPage() {
                       <AdvancedImage
                         cldImg={blogImage}
                         alt={post.title}
-                        className="w-full max-h-[500px] rounded-xl overflow-hidden shadow-lg mb-4 object-contain"
+                        className="w-full max-h-[300px] rounded-xl overflow-hidden shadow-lg mb-4 object-contain"
                       />
                     )}
                     <p className="whitespace-pre-wrap">{post.content}</p>

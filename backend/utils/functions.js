@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 
 // Generic function to get data from a collection (model)
-export const getData = async (collection) => {
+export const getData = async (collection,offset=0,limit=5) => {
   try {
-    const data = await collection.find().lean(); // Use the actual model to query
+    const data = await collection.find().sort({createdAt: -1}).skip(offset).limit(limit)
     return data;
   } catch (err) {
     console.error(err.message);

@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const FETCH_POSTS = gql`
-  query FETCH_POSTS {
-    posts {
+  query FETCH_POSTS($offset: Int, $limit: Int) {
+    posts(offset: $offset, limit: $limit) {
       _id
       title
       content
