@@ -179,7 +179,7 @@ export function BlogLandingPageJsx() {
                           <AdvancedImage
                             cldImg={blogImage}
                             alt={post.title}
-                            className="w-full max-h-[500px] rounded-xl overflow-hidden shadow-lg mb-4 object-contain"
+                            className="w-full max-h-[300px] rounded-xl overflow-hidden shadow-lg mb-4 object-contain"
                           />
                         )}
                         <div className="flex flex-wrap gap-2 mb-4">
