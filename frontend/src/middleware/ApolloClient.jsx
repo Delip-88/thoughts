@@ -19,6 +19,8 @@ const client = new ApolloClient({
 
 export default client;
 
+
+//not needed
 // cache: new InMemoryCache({
 //   typePolicies: {
 //     Query: {

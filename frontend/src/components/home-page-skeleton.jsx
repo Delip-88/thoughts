@@ -10,7 +10,7 @@ export function HomePageSkeleton() {
         <section className="w-full py-12 md:py-15 lg:py-25 transition-all ease-linear">
           <div className="container px-4 md:px-6 mx-auto max-w-3xl">
             <div className="space-y-10">
-              {[...Array(3)].map((_, i) => (
+              {[...Array(2)].map((_, i) => (
                 <div
                   key={i}
                   className="flex flex-col items-start gap-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">

@@ -43,7 +43,7 @@ export function UserHomePageJsx() {
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef();
 
-  const limit = 5;
+  const limit = 3;
 
   const { loading: postLoading, error: postError, data, fetchMore } = useQuery(FETCH_POSTS, {
     variables: {
@@ -167,7 +167,7 @@ export function UserHomePageJsx() {
                       : null;
                     const blogImage = post.image?.public_id
                       ? cid
-                          .image(post.image.public_id)
+                          .image(post.image.public_id).format("auto")
                       : null;
                     return (
                       <div
@@ -260,32 +260,7 @@ export function UserHomePageJsx() {
                     );
                   })
               )}
-              {postLoading && (
-                <div className="space-y-10">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="animate-pulse bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
-                        <div className="flex-1">
-                          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
-                          <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/5"></div>
-                        </div>
-                      </div>
-                      <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
-                      <div className="h-64 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div>
-                      <div className="space-y-2 mb-4">
-                        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-full"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-full"></div>
-                        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
-                        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/6"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {postLoading && <HomePageSkeleton/>}
               {!postLoading && !hasMore && posts.length > 0 && (
                 <div className="text-center text-gray-600 dark:text-gray-400 py-8">
                   No more posts available.
