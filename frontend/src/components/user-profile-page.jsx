@@ -34,8 +34,7 @@ export function UserProfilePageComponent() {
   });
 
   const handleSendMessage = async () => {
-    // Implement sendMessage mutation logic here
-    toast.info("Message functionality not implemented yet.");
+    navigate(`/${user.username}/${user._id}?username=${user.username}&userId=${user._id}&pfp=${user.image.secure_url}`)
   };
 
   if (loading) return <ProfileSkeleton />;

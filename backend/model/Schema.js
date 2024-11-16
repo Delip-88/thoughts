@@ -60,6 +60,7 @@ export const typeDefs = `#graphql
         comment(postId: ID!): [Comment!]
         checkAuth(id: ID!): User
         me: User
+        getMessages(senderId: ID!, receiverId: ID!): [Message!]
     }
     type Mutation{
         addUser(user: userInput!): User
@@ -80,7 +81,22 @@ export const typeDefs = `#graphql
         newPassword(token: String!, password: String!): Response!
         getUploadSignature(tags: [String],upload_preset: String!, uploadFolder: String!): Signature!
         getDeleteSignature(publicId: String!): Signature!
+
+        sendMessage(receiverId: ID!, content: String!): Message!
     }
+
+    type Message{
+        _id: ID!
+        senderId: ID!
+        receiverId: ID!
+        content: String!
+        isRead: Boolean!
+        createdAt: String!
+    }
+    type Subscription{
+        newMessage(receiverId: ID!): Message!
+    }
+
     type Signature{
         timestamp: Int!
         signature: String!

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useContext } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, PenTool, Bell, User, Menu, X, LogOut, ChevronDown } from 'lucide-react'
+import { BookOpen, PenTool, User, Menu, X, LogOut, ChevronDown } from 'lucide-react'
 import { AuthContext } from '@/middleware/AuthContext'
 import { ThemeContext } from '@/middleware/ThemeContext'
 import { Switch } from "@/components/ui/switch"
@@ -28,6 +28,17 @@ const Button = ({
   )
 }
 
+const MessengerIcon = ({ className = "h-5 w-5" }) => (
+  <svg
+    viewBox="0 0 28 28"
+    className={className}
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M14 2.042c6.76 0 12 4.952 12 11.64S20.76 25.322 14 25.322a13.091 13.091 0 0 1-3.474-.461.956 .956 0 0 0-.641.047L7.5 25.959a.961.961 0 0 1-1.348-.849l-.065-2.134a.957.957 0 0 0-.322-.684A11.389 11.389 0 0 1 2 13.682C2 6.994 7.24 2.042 14 2.042ZM6.794 17.086a.57.57 0 0 0 .827.758l3.786-2.874a.722.722 0 0 1 .868 0l2.8 2.1a1.8 1.8 0 0 0 2.6-.481l3.525-5.592a.57.57 0 0 0-.827-.758l-3.786 2.874a.722.722 0 0 1-.868 0l-2.8-2.1a1.8 1.8 0 0 0-2.6.481Z" />
+  </svg>
+)
+
 export function UserHeaderComponent() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -37,6 +48,13 @@ export function UserHeaderComponent() {
   const {logout, user} = useContext(AuthContext)
   const {isDarkMode, toggleDarkMode} = useContext(ThemeContext)
 
+  const handleLogout = ()=>{
+    if(!confirm("You are about to logout") ) return;
+    setTimeout(() => {
+      logout()
+    }, 2000);
+  }
+  
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
     setIsDropdownOpen(false)
@@ -73,8 +91,8 @@ export function UserHeaderComponent() {
       <header className="max-w-7xl mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-14">
           <NavLink className="flex items-center justify-center" to="/Home">
-            <BookOpen className="h-6 w-6 mr-2 text-gray-800 dark:text-gray-200 transition-transform duration-200 ease-in-out hover:rotate-12" />
-            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">My Blog</span>
+            <BookOpen className="h-6 w-6 mr-2 text-gray-800 dark:text-gray-200 transition-transform duration-200 ease-in-out hover:rotate-12" onClick={()=>window.location.href="/Home"}/>
+            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200" onClick={()=>window.location.href="/Home"}>My Blog</span>
           </NavLink>
           <nav className="hidden md:flex items-center gap-4">
             <Button variant="outline" className='p-3' onClick={() => navigate('/create-post')}>
@@ -84,10 +102,10 @@ export function UserHeaderComponent() {
             <Button
               variant="outline"
               className="p-2"
-              onClick={() => navigate('/notifications')}
+              onClick={() => navigate('/messages')}
             >
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
+              <MessengerIcon />
+              <span className="sr-only">Messages</span>
             </Button>
             <div className="dropdown-container relative">
               <Button variant="outline" className="p-3" onClick={toggleDropdown}>
@@ -113,14 +131,7 @@ export function UserHeaderComponent() {
                   <a
                     href="#"
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    onClick={() => {
-                      if(!confirm("You are about to logout.")) return ;
-                      logout()
-                      setTimeout(() => {
-                        navigate('/login')
-                      }, 500);
-                      setIsDropdownOpen(false)
-                    }}
+                    onClick={handleLogout}
                   >
                     Logout
                   </a>
@@ -162,12 +173,12 @@ export function UserHeaderComponent() {
                   href="#"
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                   onClick={() => {
-                    navigate('/notifications')
+                    navigate('/messages')
                     toggleMenu()
                   }}
                 >
-                  <Bell className="inline-block mr-2 h-4 w-4" />
-                  Notifications
+                  <MessengerIcon className="inline-block mr-2 h-4 w-4" />
+                  Messages
                 </a>
                 <a
                   href="#"
@@ -183,12 +194,7 @@ export function UserHeaderComponent() {
                 <a
                   href="#"
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                  onClick={() => {
-                    console.log('Logging out...')
-                    logout()
-                    navigate('/login')
-                    toggleMenu()
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut className="inline-block mr-2 h-4 w-4" />
                   Logout

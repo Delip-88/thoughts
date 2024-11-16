@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
       const { message, success } = response.data?.logout || {};
 
       if (success) {
+        window.location.href="/"
         // Update client-side auth state
         setIsAuthenticated(false);
         setUser(null)

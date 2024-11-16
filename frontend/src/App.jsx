@@ -21,6 +21,7 @@ import { ContactPageJsx } from "./components/contact-page";
 import { UserProfilePageComponent } from "./components/user-profile-page";
 import { ArchivePageJsx } from "./components/archive-page";
 import { PostPage } from "./components/post-page";
+import { MessageInbox } from "./components/message-inbox";
 
 const App = () => {
   return (
@@ -67,6 +68,7 @@ const App = () => {
             path="/user-profile/:id"
             element={<UserProfilePageComponent />}
           />
+          <Route path="/:username/:userId" element={<MessageInbox/>} />
           {/* Handle any random URL after login */}
           <Route path="*" element={<PageNotFoundComponent />} />
         </Route>

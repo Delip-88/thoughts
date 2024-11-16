@@ -1,44 +1,44 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
+import { ApolloClient, InMemoryCache, createHttpLink, split } from "@apollo/client";
+import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
+import { createClient } from "graphql-ws";
+import { getMainDefinition } from "@apollo/client/utilities";
 
+// WebSocket link for subscriptions
+const wsLink = new GraphQLWsLink(
+  createClient({
+    url: import.meta.env.VITE_GRAPHQL_SUBSCRIPTION_URL, 
+  })
+);
+
+// Determine API URL based on environment
 const apiUrl =
   import.meta.env.VITE_MODE === "development"
-    ? import.meta.env.VITE_GRAPHQL_API_URL
-    : import.meta.env.VITE_SERVER_URL; // Use relative path in production
+    ? import.meta.env.VITE_GRAPHQL_API_URL // Development URL
+    : import.meta.env.VITE_SERVER_URL; // Production URL
 
-// Step 1: Create the HTTP link to your GraphQL server
+// HTTP link for queries and mutations
 const httpLink = createHttpLink({
   uri: apiUrl,
-  credentials: "include", // Include cookies in requests
+  credentials: "include", // Include cookies for authentication
 });
 
-// Step 2: Create the Apollo Client instance
+// Split based on operation type (query/mutation vs subscription)
+const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return (
+      definition.kind === "OperationDefinition" &&
+      definition.operation === "subscription"
+    );
+  },
+  wsLink, // Use WebSocket for subscriptions
+  httpLink // Use HTTP for queries and mutations
+);
+
+// Apollo Client instance
 const client = new ApolloClient({
-  link: httpLink,
-  cache: new InMemoryCache(),
+  link: splitLink, // Combined link
+  cache: new InMemoryCache(), // Cache for local state and query results
 });
 
 export default client;
-
-
-//not needed
-// cache: new InMemoryCache({
-//   typePolicies: {
-//     Query: {
-//       fields: {
-//         keyArgs: false,
-
-//         merge(existing, incoming, { args: { offset = 0 } }) {
-//           // Slicing is necessary because the existing data is
-//           // immutable, and frozen in development.
-//           const merged = existing ? existing.slice(0) : [];
-
-//           for (let i = 0; i < incoming.length; ++i) {
-//             merged[offset + i] = incoming[i];
-//           }
-
-//           return merged;
-//         },
-//       },
-//     },
-//   },
-// }),

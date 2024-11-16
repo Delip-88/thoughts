@@ -1,4 +1,4 @@
-import { User, Post, Comment } from "./mongoSchema.js"; // Import the actual models
+import { User, Post, Comment, Message } from "./mongoSchema.js";
 import { generateToken } from "../utils/token.js";
 import { sendEmail } from "../config/email_type.js";
 import jwt from "jsonwebtoken";
@@ -12,6 +12,8 @@ import {
   uploadSignature,
   getCommentsById,
 } from "../utils/functions.js";
+
+const NEW_MESSAGE="NEW_MESSAGE"
 
 const protectedRoute = async (context) => {
   const user = await resolvers.Query.checkAuth(null, null, context);
@@ -72,6 +74,25 @@ const resolvers = {
     comment(_, { postId }) {
       return getCommentsById(Comment, postId);
     },
+    getMessages: async (_, { senderId, receiverId }, context) => {
+      try {
+        // Validate user authentication if necessary
+        // const user = await protectedRoute(context);
+    
+        // Fetch messages where the sender and receiver match either way
+        const messages = await Message.find({
+          $or: [ 
+            { senderId, receiverId },
+            { senderId: receiverId, receiverId: senderId },
+          ],
+        }).sort({ createdAt: 1 }); // Sort messages by creation date (oldest to newest)
+    
+        return messages; // Return the messages array
+      } catch (err) {
+        throw new Error(`Failed to fetch messages: ${err.message}`);
+      }
+    },
+    
   },
 
   // Resolve `posts` for a User
@@ -102,6 +123,32 @@ const resolvers = {
     },
   },
   Mutation: {
+    async sendMessage(_, { receiverId, content }, context) {
+      const user = await protectedRoute(context);
+
+      const {pubsub} = context
+      try {
+        const newMessage = new Message({
+          senderId: user._id,
+          receiverId,
+          content,
+          isRead: false,
+        });
+
+        const savedMessage = await newMessage.save();
+
+        // Publish the new message to a unique channel for the receiver
+        pubsub.publish(`${NEW_MESSAGE}_${receiverId}`, {
+          newMessage: savedMessage,
+        });
+
+        // Return the saved message
+        return savedMessage;
+      } catch (err) {
+        throw new Error(`Failed to send message: ${err.message}`);
+      }
+    },
+
     async addComment(_, { postId, userId, content }, context) {
       const user = await protectedRoute(context);
 
@@ -161,7 +208,6 @@ const resolvers = {
         throw new Error(`Failed to delete comment: ${err.message}`);
       }
     },
-
     async getUploadSignature(
       _,
       { tags, upload_preset, uploadFolder },
@@ -241,7 +287,6 @@ const resolvers = {
         throw new Error("Error updating user");
       }
     },
-
     async updatePost(_, { post }, context) {
       const loggedUser = await protectedRoute(context);
       const { _id, title, content } = post;
@@ -261,7 +306,6 @@ const resolvers = {
         throw new Error("Error updating post");
       }
     },
-
     async likeOnPost(_, { id }, context) {
       const loggedUser = await protectedRoute(context);
       const post = await Post.findById(id);
@@ -283,12 +327,10 @@ const resolvers = {
       await post.save();
       return { message: "Success", success: true };
     },
-
     async deleteUser(_, { id }, context) {
       const user = await protectedRoute(context);
       return deleteDataById(User, id); // Delete user by ID
     },
-
     async deletePost(_, { id }, context) {
       const user = await protectedRoute(context);
       return deleteDataById(Post, id); // Delete post by ID
@@ -343,7 +385,6 @@ const resolvers = {
         throw new Error(err.message);
       }
     },
-
     async resendCode(_, { email }) {
       try {
         const user = await User.findOne({ email });
@@ -466,7 +507,6 @@ const resolvers = {
         throw new Error(`Failed to reset password: ${err.message}`);
       }
     },
-
     async newPassword(_, { password, token }, context) {
       try {
         // Find user by the reset token
@@ -545,6 +585,16 @@ const resolvers = {
       return { message: "logged out sucessfully", success: true };
     },
   },
+  Subscription: {
+    newMessage: {
+      subscribe: async (_, { receiverId }, { pubsub }) => {
+        console.log("Subscribing to channel:", `${NEW_MESSAGE}_${receiverId}`);
+        return pubsub.asyncIterator(`${NEW_MESSAGE}_${receiverId}`);
+      },
+    },
+  },
+  
+  
 };
 
 export default resolvers;
