@@ -22,6 +22,7 @@ import { UserProfilePageComponent } from "./components/user-profile-page";
 import { ArchivePageJsx } from "./components/archive-page";
 import { PostPage } from "./components/post-page";
 import { MessageInbox } from "./components/message-inbox";
+import { InboxComponent } from "./components/inbox-component";
 
 const App = () => {
   return (
@@ -61,6 +62,7 @@ const App = () => {
           {/* Nested routes for authenticated users */}
           <Route index element={<UserHomePageJsx />} /> {/* This is / */}
           <Route path="/Home" element={<UserHomePageJsx />} />
+          <Route path="/Messages" element={<InboxComponent />} />
           <Route path="/profile" element={<ViewProfile />} />
           <Route path="/create-post" element={<WriteNewPost />} />
           <Route path="/edit-profile" element={<EditProfilePageJsx />} />

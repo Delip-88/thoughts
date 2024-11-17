@@ -196,7 +196,7 @@ export function ViewProfile() {
           </NavLink>
         </header>
         <main className="flex-1">
-          <section className="w-full py-12 md:py-24 lg:py-32">
+          <section className="w-full py-12 md:py-10 lg:py-10">
             <div className="container px-4 md:px-6 mx-auto">
               <div className="flex flex-col md:flex-row gap-8">
                 {/* User Profile Section */}

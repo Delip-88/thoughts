@@ -6,7 +6,7 @@ import { getMainDefinition } from "@apollo/client/utilities";
 // WebSocket link for subscriptions
 const wsLink = new GraphQLWsLink(
   createClient({
-    url: import.meta.env.VITE_GRAPHQL_SUBSCRIPTION_URL, 
+    url: import.meta.env.VITE_MODE === "development" ? import.meta.env.VITE_GRAPHQL_SUBSCRIPTION_URL : import.meta.env.VITE_GRAPHQL_SUBSCRIPTION_RENDER_URL, 
   })
 );
 
