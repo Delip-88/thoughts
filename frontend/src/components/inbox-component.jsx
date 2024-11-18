@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useContext, useEffect, useRef } from "react";
+import React, { useState, useContext, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import { Send, ArrowLeft, Menu, X } from 'lucide-react';
 import { AuthContext } from "@/middleware/AuthContext";
@@ -18,10 +18,10 @@ import {
 } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { InboxComponentSkeleton } from "./inbox-component-skeleton";
-import { useLazyQuery, useQuery, useMutation } from "@apollo/client";
+import { useLazyQuery, useQuery, useMutation, useSubscription } from "@apollo/client";
 import { ALL_USERS } from "@/graphql/query/usersGql";
 import { GET_MESSAGES } from "@/graphql/query/messagesGql";
-import { SEND_MESSAGE } from "@/graphql/mutations/messageGql";
+import { NEW_MESSAGE_SUBSCRIPTION, SEND_MESSAGE } from "@/graphql/mutations/messageGql";
 
 export function InboxComponent() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -46,6 +46,17 @@ export function InboxComponent() {
     });
 
   const [sendMessage] = useMutation(SEND_MESSAGE, {
+    optimisticResponse: ({ content, receiverId }) => ({
+      sendMessage: {
+        __typename: "Message",
+        _id: `temp-id-${Date.now()}`,
+        content,
+        senderId: currentUser._id,
+        receiverId,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      },
+    }),
     update: (cache, { data: { sendMessage } }) => {
       const existingMessages = cache.readQuery({
         query: GET_MESSAGES,
@@ -64,7 +75,25 @@ export function InboxComponent() {
     },
   });
 
-  const fetchConversation = async (receiverId) => {
+  const { data: subscriptionData } = useSubscription(NEW_MESSAGE_SUBSCRIPTION, {
+    variables: { receiverId: currentUser._id },
+  });
+
+  useEffect(() => {
+    if (subscriptionData?.newMessage) {
+      const newMessage = subscriptionData.newMessage;
+  
+      if (
+        newMessage.senderId === selectedUser?._id ||
+        newMessage.receiverId === selectedUser?._id
+      ) {
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      }
+    }
+  }, [subscriptionData, selectedUser]);
+  
+
+  const fetchConversation = useCallback(async (receiverId) => {
     try {
       await getUserMessages({
         variables: {
@@ -75,7 +104,7 @@ export function InboxComponent() {
     } catch (error) {
       console.error(`Error fetching Conversation: ${error.message}`);
     }
-  };
+  }, [currentUser._id, getUserMessages]);
 
   const [friends, setFriends] = useState([]);
 
@@ -86,6 +115,8 @@ export function InboxComponent() {
   } = useQuery(ALL_USERS);
 
   useEffect(() => {
+    
+    console.log("Friends Data Users:", friendsData?.users);
     if (friendsData && friendsData.users) {
       setFriends(friendsData.users.filter(user => user._id !== currentUser._id));
     }
@@ -94,6 +125,18 @@ export function InboxComponent() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (newMessage.trim() && selectedUser) {
+      const optimisticMessage = {
+        _id: `temp-id-${Date.now()}`,
+        content: newMessage,
+        senderId: currentUser._id,
+        receiverId: selectedUser._id,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      };
+  
+      // Update messages locally
+      setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
+  
       try {
         await sendMessage({
           variables: {
@@ -108,6 +151,7 @@ export function InboxComponent() {
       }
     }
   };
+  
 
   const toggleUserList = () => {
     setIsUserListVisible(!isUserListVisible);

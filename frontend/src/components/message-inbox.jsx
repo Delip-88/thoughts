@@ -87,6 +87,7 @@ export function MessageInbox() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [data]);
+  
   useEffect(() => {
     const unsubscribe = subscribeToMore({
       document: NEW_MESSAGE_SUBSCRIPTION,
