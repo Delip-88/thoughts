@@ -38,16 +38,27 @@ redisSubscriber.on("connect", () => console.log("Connected to Redis for subscrib
 redisPublisher.on("error", (err) => console.error("Redis Publisher Error:", err));
 redisSubscriber.on("error", (err) => console.error("Redis Subscriber Error:", err));
 
+await redisPublisher.ping();
+await redisSubscriber.ping();
+console.log("Redis is ready.");
+
+
 // Middleware setup
 app.use(cookieParser());
 app.use(helmet()); // Security headers
+
+app.set("trust proxy", true);
 
 // Rate Limiting Middleware for basic protection
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per window
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
 });
 app.use(limiter);
+
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -79,48 +90,50 @@ const server = new ApolloServer({
 });
 
 const startServer = async () => {
-  console.log("Starting server...");
+  try {
+    console.log("Starting server...");
 
-  await server.start();
-  console.log("Apollo Server started");
+    await server.start();
+    console.log("Apollo Server started");
 
-  await connectDb();
-  console.log("Database connected");
+    await connectDb();
+    console.log("Database connected");
 
-  app.use(
-    "/graphql",
-    bodyParser.json(),
-    authenticate,
-    expressMiddleware(server, {
-      context: async ({ req, res }) => {
-        // console.log("Context created");
-        return { req, res, pubsub };
+    app.use(
+      "/graphql",
+      bodyParser.json(),
+      authenticate,
+      expressMiddleware(server, {
+        context: async ({ req, res }) => {
+          return { req, res, pubsub };
+        },
+      })
+    );
+
+    const wsServer = new WebSocketServer({
+      server: httpServer,
+      path: "/graphql",
+    });
+
+    useServer(
+      {
+        schema,
+        context: async () => {
+          return { pubsub };
+        },
       },
-    })
-  );
+      wsServer
+    );
 
-  // Set up WebSocket server for subscriptions
-  const wsServer = new WebSocketServer({
-    server: httpServer,
-    path: "/graphql",
-  });
-
-  // Use graphql-ws to handle WebSocket connections with the schema
-  useServer(
-    {
-      schema,
-      context: async () => {
-        console.log("WebSocket context created");
-        return { pubsub }; // Pass pubsub in WebSocket context
-      },
-    },
-    wsServer
-  );
-
-  httpServer.listen(port, () => {
-    console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
-    console.log(`🚀 Subscriptions ready at ws://localhost:${port}/graphql`);
-  });
+    httpServer.listen(port, () => {
+      console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
+      console.log(`🚀 Subscriptions ready at ws://localhost:${port}/graphql`);
+    });
+  } catch (error) {
+    console.error("Error starting server:", error);
+    process.exit(1); // Exit with failure code
+  }
 };
+
 
 startServer();
