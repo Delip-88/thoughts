@@ -33,21 +33,28 @@ const pubsub = new RedisPubSub({
 });
 
 // Log Redis connection status
-redisPublisher.on("connect", () => console.log("Connected to Redis for publisher"));
-redisSubscriber.on("connect", () => console.log("Connected to Redis for subscriber"));
-redisPublisher.on("error", (err) => console.error("Redis Publisher Error:", err));
-redisSubscriber.on("error", (err) => console.error("Redis Subscriber Error:", err));
+redisPublisher.on("connect", () =>
+  console.log("Connected to Redis for publisher")
+);
+redisSubscriber.on("connect", () =>
+  console.log("Connected to Redis for subscriber")
+);
+redisPublisher.on("error", (err) =>
+  console.error("Redis Publisher Error:", err)
+);
+redisSubscriber.on("error", (err) =>
+  console.error("Redis Subscriber Error:", err)
+);
 
 await redisPublisher.ping();
 await redisSubscriber.ping();
 console.log("Redis is ready.");
 
-
 // Middleware setup
 app.use(cookieParser());
 app.use(helmet()); // Security headers
 
-app.set("trust proxy", true);
+app.set("trust proxy", 1);
 
 // Rate Limiting Middleware for basic protection
 const limiter = rateLimit({
@@ -59,7 +66,6 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -68,7 +74,7 @@ cloudinary.config({
 
 // CORS configuration with environment-based origin control
 const corsOptions = {
-  origin: [process.env.CLIENT_URL, "https://sandbox.apollo.dev"],
+  origin: [process.env.CLIENT_URL],
   credentials: true,
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -78,7 +84,7 @@ app.use(cors(corsOptions));
 // Create schema from typeDefs and resolvers, including subscriptions
 const schema = makeExecutableSchema({
   typeDefs,
-  resolvers
+  resolvers,
 });
 
 // Create HTTP server for both HTTP and WebSocket support
@@ -134,6 +140,5 @@ const startServer = async () => {
     process.exit(1); // Exit with failure code
   }
 };
-
 
 startServer();
