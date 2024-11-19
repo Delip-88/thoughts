@@ -3,9 +3,19 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 
 // Generic function to get data from a collection (model)
-export const getData = async (collection,offset=0,limit=5) => {
+export const getData = async (collection, offset = 0, limit = null) => {
   try {
-    const data = await collection.find().sort({createdAt: -1}).skip(offset).limit(limit)
+    offset = parseInt(offset, 10) || 0;
+    limit = limit ? parseInt(limit, 10) : null;
+
+    if (offset < 0 || (limit !== null && limit < 1)) {
+      throw new Error("Invalid offset or limit values");
+    }
+
+    const query = collection.find().sort({ createdAt: -1 }).skip(offset);
+    if (limit) query.limit(limit);
+
+    const data = await query;
     return data;
   } catch (err) {
     console.error(err.message);

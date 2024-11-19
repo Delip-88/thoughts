@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useContext, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import { Send, ArrowLeft, Menu, X } from 'lucide-react';
@@ -27,7 +25,7 @@ export function InboxComponent() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isUserListVisible, setIsUserListVisible] = useState(false);
+  const [isUserListVisible, setIsUserListVisible] = useState(true);
   const { user: currentUser } = useContext(AuthContext);
   const { isDarkMode } = useContext(ThemeContext);
   const messagesEndRef = useRef(null);
@@ -91,7 +89,6 @@ export function InboxComponent() {
       }
     }
   }, [subscriptionData, selectedUser]);
-  
 
   const fetchConversation = useCallback(async (receiverId) => {
     try {
@@ -115,8 +112,7 @@ export function InboxComponent() {
   } = useQuery(ALL_USERS);
 
   useEffect(() => {
-    
-    console.log("Friends Data Users:", friendsData?.users);
+
     if (friendsData && friendsData.users) {
       setFriends(friendsData.users.filter(user => user._id !== currentUser._id));
     }
@@ -134,7 +130,6 @@ export function InboxComponent() {
         createdAt: new Date().toISOString(),
       };
   
-      // Update messages locally
       setMessages((prevMessages) => [...prevMessages, optimisticMessage]);
   
       try {
@@ -151,7 +146,6 @@ export function InboxComponent() {
       }
     }
   };
-  
 
   const toggleUserList = () => {
     setIsUserListVisible(!isUserListVisible);
@@ -165,25 +159,23 @@ export function InboxComponent() {
     scrollToBottom();
   }, [messages]);
 
+  const handleUserSelect = (user) => {
+    setSelectedUser(user);
+    fetchConversation(user._id);
+    setIsUserListVisible(false);
+  };
+
   if (friendsLoading) return <InboxComponentSkeleton />;
 
   if (friendsError)
     return <div>Error fetching friends: {friendsError.message}</div>;
 
   return (
-    <div
-      className={`flex flex-col min-h-screen ${
-        isDarkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
-      }`}
-    >
+    <div className={`flex flex-col min-h-screen ${isDarkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"}`}>
       <main className="flex-1">
         <section className="w-full flex justify-center items-center py-6 md:py-7 lg:py-7">
           <div className="container px-4 md:px-6">
-            <Card
-              className={`mx-auto max-w-4xl ${
-                isDarkMode ? "bg-gray-800" : "bg-white"
-              }`}
-            >
+            <Card className={`mx-auto max-w-4xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
               <CardHeader className="flex flex-row items-center justify-between p-4">
                 <Button variant="ghost" onClick={() => navigate(-1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -192,63 +184,34 @@ export function InboxComponent() {
                 <CardTitle className="md:hidden">
                   {selectedUser && selectedUser.username}
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  className="md:hidden"
-                  onClick={toggleUserList}
-                >
-                  {isUserListVisible ? (
-                    <X className="h-4 w-4" />
-                  ) : (
-                    <Menu className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">
-                    {isUserListVisible ? "Close" : "Contacts"}
-                  </span>
+                <Button variant="ghost" className="md:hidden" onClick={toggleUserList}>
+                  {isUserListVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                  <span className="sr-only">{isUserListVisible ? "Close" : "Contacts"}</span>
                 </Button>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row h-[calc(100vh-200px)] md:h-[600px] overflow-hidden">
                   {/* User list sidebar */}
-                  <div
-                    className={`w-full md:w-1/3 border-r ${
-                      isDarkMode ? "border-gray-700" : "border-gray-200"
-                    } ${isUserListVisible ? "block" : "hidden md:block"}`}
-                  >
+                  <div className={`w-full md:w-1/3 border-r ${isDarkMode ? "border-gray-700" : "border-gray-200"} ${isUserListVisible ? "block" : "hidden md:block"}`}>
                     <ScrollArea className="h-full">
                       {friends.map((user) => (
                         <div
                           key={user._id}
                           className={`flex items-center space-x-4 px-4 py-3 cursor-pointer ${
                             selectedUser && selectedUser._id === user._id
-                              ? isDarkMode
-                                ? "bg-gray-700"
-                                : "bg-gray-100"
-                              : isDarkMode
-                              ? "hover:bg-gray-700"
-                              : "hover:bg-gray-50"
+                              ? isDarkMode ? "bg-gray-700" : "bg-gray-100"
+                              : isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-50"
                           }`}
-                          onClick={() => {
-                            setSelectedUser(user);
-                            fetchConversation(user._id);
-                            setIsUserListVisible(false);
-                          }}
+                          onClick={() => handleUserSelect(user)}
                         >
-                          <Avatar>
-                            <AvatarImage
-                              src={user.image?.secure_url || import.meta.env.VITE_DEFAULT_AVTAR}
-                              alt={user.username}
-                            />
-                            <AvatarFallback>
-                              {user.username.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="hidden md:block">
+                            <Avatar>
+                              <AvatarImage src={user.image?.secure_url || import.meta.env.VITE_DEFAULT_AVTAR} alt={user.username} />
+                              <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm font-medium truncate ${
-                                isDarkMode ? "text-gray-100" : "text-gray-900"
-                              }`}
-                            >
+                            <p className={`text-sm font-medium truncate ${isDarkMode ? "text-gray-100" : "text-gray-900"}`}>
                               {user.username}
                             </p>
                           </div>
@@ -258,24 +221,12 @@ export function InboxComponent() {
                   </div>
 
                   {/* Message area */}
-                  <div
-                    className={`flex-1 flex flex-col ${
-                      isUserListVisible ? "hidden md:flex" : "flex"
-                    }`}
-                  >
+                  <div className={`flex-1 flex flex-col ${isUserListVisible ? "hidden md:flex" : "flex"}`}>
                     {selectedUser ? (
                       <>
                         {/* Chat header */}
-                        <div
-                          className={`px-4 py-3 border-b ${
-                            isDarkMode ? "border-gray-700" : "border-gray-200"
-                          } hidden md:block`}
-                        >
-                          <h2
-                            className={`text-lg font-semibold ${
-                              isDarkMode ? "text-gray-100" : "text-gray-900"
-                            }`}
-                          >
+                        <div className={`px-4 py-3 border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"} hidden md:block`}>
+                          <h2 className={`text-lg font-semibold ${isDarkMode ? "text-gray-100" : "text-gray-900"}`}>
                             {selectedUser.username}
                           </h2>
                         </div>
@@ -286,29 +237,18 @@ export function InboxComponent() {
                             {messages.map((message) => (
                               <div
                                 key={message._id}
-                                className={`flex mb-4 ${
-                                  message.senderId === currentUser._id
-                                    ? "justify-end"
-                                    : "justify-start"
-                                }`}
+                                className={`flex mb-4 ${message.senderId === currentUser._id ? "justify-end" : "justify-start"}`}
                               >
                                 <div
                                   className={`max-w-[70%] rounded-lg px-4 py-2 ${
                                     message.senderId === currentUser._id
                                       ? "bg-primary text-primary-foreground"
-                                      : isDarkMode
-                                      ? "bg-gray-700 text-gray-100"
-                                      : "bg-gray-200 text-gray-900"
+                                      : isDarkMode ? "bg-gray-700 text-gray-100" : "bg-gray-200 text-gray-900"
                                   }`}
                                 >
-                                  <p className="text-sm md:text-base">
-                                    {message.content}
-                                  </p>
+                                  <p className="text-sm md:text-base">{message.content}</p>
                                   <p className="text-xs mt-1 opacity-70">
-                                    {format(
-                                      new Date(parseInt(message.createdAt)),
-                                      "HH:mm"
-                                    )}
+                                    {format(new Date(parseInt(message.createdAt)), "HH:mm")}
                                   </p>
                                 </div>
                               </div>
@@ -318,15 +258,8 @@ export function InboxComponent() {
                         </ScrollArea>
 
                         {/* Message input */}
-                        <CardFooter
-                          className={`border-t p-2 ${
-                            isDarkMode ? "border-gray-700" : "border-gray-200"
-                          }`}
-                        >
-                          <form
-                            onSubmit={handleSendMessage}
-                            className="flex w-full space-x-2"
-                          >
+                        <CardFooter className={`border-t p-2 ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
+                          <form onSubmit={handleSendMessage} className="flex w-full space-x-2">
                             <Input
                               type="text"
                               placeholder="Type a message..."
@@ -343,9 +276,7 @@ export function InboxComponent() {
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">
-                          Select a user to start chatting
-                        </p>
+                        <p className="text-gray-500">Select a user to start chatting</p>
                       </div>
                     )}
                   </div>
