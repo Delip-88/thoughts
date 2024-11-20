@@ -11,6 +11,9 @@ export const FETCH_POSTS = gql`
       likes {
         _id
       }
+      comments {
+        _id
+      }
       image {
         public_id
         secure_url
@@ -41,7 +44,7 @@ export const FETCH_POST_BY_ID = gql`
         public_id
         secure_url
       }
-      likes{
+      likes {
         _id
       }
       author {

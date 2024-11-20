@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
-import { Heart } from "lucide-react";
+import { Heart, MessageCircle, Share2 } from 'lucide-react';
 import { useMutation, useQuery } from "@apollo/client";
 import { FETCH_POSTS } from "@/graphql/query/postsGql";
 import { AuthContext } from "@/middleware/AuthContext";
@@ -9,8 +9,9 @@ import PostTime from "@/utils/PostTime";
 import { ADD_LIKE } from "@/graphql/mutations/likesGql";
 import { AdvancedImage } from "@cloudinary/react";
 import { fill } from "@cloudinary/url-gen/actions/resize";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HomePageSkeleton } from "./home-page-skeleton";
+import { PostContext } from "@/middleware/PostContext";
 
 const Button = ({
   children,
@@ -35,13 +36,29 @@ const Button = ({
   );
 };
 
+
 export function UserHomePageJsx() {
   const { user, cid } = useContext(AuthContext);
+  const {posts, setPosts} = useContext(PostContext)
   const navigate = useNavigate();
-  const [posts, setPosts] = useState([]);
+ 
   const [expanded, setExpanded] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef();
+
+  const location = useLocation()
+
+  useEffect(() => {
+    const scrollPosition = sessionStorage.getItem('scrollPosition');
+    if (scrollPosition) {
+      window.scrollTo(0, parseInt(scrollPosition, 10));
+    }
+  
+    return () => {
+      sessionStorage.setItem('scrollPosition', window.scrollY);
+    };
+  }, [location]);
+  
 
   const limit = 3;
 
@@ -50,7 +67,7 @@ export function UserHomePageJsx() {
       offset: 0,
       limit
     },
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true,
   });
 
@@ -223,7 +240,7 @@ export function UserHomePageJsx() {
                               ? post.content
                               : post.content.slice(0, 200) + "..."}
                           </p>
-                          <div className="flex justify-between items-center">
+                          <div className="flex justify-between items-center mb-4">
                             <div className="relative">
                               {post.content.length > 200 && (
                                 <Button
@@ -235,6 +252,8 @@ export function UserHomePageJsx() {
                                 </Button>
                               )}
                             </div>
+                          </div>
+                          <div className="flex justify-between items-center border-t pt-4 dark:border-gray-700">
                             <button
                               className={`flex items-center space-x-2 ${
                                 isLiked
@@ -253,6 +272,23 @@ export function UserHomePageJsx() {
                                 }`}
                               />
                               <span>{post.likes?.length || 0}</span>
+                            </button>
+                            <button
+                              className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors duration-200"
+                              onClick={() => navigate(`/post/${post._id}`)}
+                            >
+                              <MessageCircle className="h-5 w-5" />
+                              <span>{post.comments?.length || 0}</span>
+                            </button>
+                            <button
+                              className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors duration-200"
+                              onClick={() => {
+                                // Implement share functionality
+                                alert("Share functionality to be implemented");
+                              }}
+                            >
+                              <Share2 className="h-5 w-5" />
+                              <span>Share</span>
                             </button>
                           </div>
                         </div>

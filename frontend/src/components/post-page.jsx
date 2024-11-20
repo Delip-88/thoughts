@@ -127,6 +127,10 @@ export function PostPage() {
   const [comment, setComment] = useState("");
   const [allComments, setAllComments] = useState([]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0); // Scrolls to the top-left corner
+  }, []);
+  
   const {
     loading: postLoading,
     error,
@@ -230,7 +234,7 @@ export function PostPage() {
     ? cid.image(post.author.image.public_id).format("auto")
     : null;
   const blogImage = post.image?.public_id
-    ? cid.image(post.image.public_id)
+    ? cid.image(post.image.public_id).format("auto")
     : null;
 
   return (
