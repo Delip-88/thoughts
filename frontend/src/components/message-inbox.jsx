@@ -1,7 +1,5 @@
-"use client";
-
-import React, { useState, useEffect, useRef, useContext } from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import React, { useState, useEffect, useContext } from "react";
+import { useMutation, useQuery } from "@apollo/client";
 import { format } from "date-fns";
 import { Send, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,112 +12,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { useLocation, useNavigate } from "react-router-dom";
-
-import {
-  GET_MESSAGES,
-  NEW_MESSAGE_SUBSCRIPTION,
-  SEND_MESSAGE,
-} from "@/graphql/mutations/messageGql";
 import { AuthContext } from "@/middleware/AuthContext";
+import { GET_MESSAGES, SEND_MESSAGE } from "@/graphql/mutations/messageGql";
 
+
+// MessageInbox component
 export function MessageInbox() {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
   const { user: currentUser } = useContext(AuthContext);
-
   const receiverId = searchParams.get("userId");
   const receiverName = searchParams.get("username") || "User";
-  const receiverAvatarUrl =
-    searchParams.get("pfp") || import.meta.env.VITE_DEFAULT_AVATAR;
+  const receiverAvatarUrl = searchParams.get("pfp") || import.meta.env.VITE_DEFAULT_AVATAR;
 
   const [newMessage, setNewMessage] = useState("");
-  
-  
-  const unsubscribeRef = useRef(null);
-  
-  const messagesEndRef = useRef(null);
+  const [sendMessage] = useMutation(SEND_MESSAGE)
 
-  const { loading, error, data, subscribeToMore } = useQuery(GET_MESSAGES, {
+  const { loading, error, data } = useQuery(GET_MESSAGES, {
     variables: { senderId: currentUser._id, receiverId },
     fetchPolicy: "network-only",
   });
-
-  const [sendMessage, { loading: sending, error: sendError }] = useMutation(
-    SEND_MESSAGE,
-    {
-      // Optimistic response to update the UI immediately after sending
-      optimisticResponse: {
-        sendMessage: {
-          __typename: "Message",
-          _id: "temp-id", // Temp ID, will be replaced with the real one from the server
-          content: newMessage,
-          senderId: currentUser._id,
-          receiverId,
-          createdAt: new Date().toISOString(),
-        },
-      },
-      update: (cache, { data: { sendMessage } }) => {
-        // Update the messages cache immediately after sending the message
-        const existingMessages = cache.readQuery({
-          query: GET_MESSAGES,
-          variables: { senderId: currentUser._id, receiverId },
-        });
-
-        cache.writeQuery({
-          query: GET_MESSAGES,
-          variables: { senderId: currentUser._id, receiverId },
-          data: {
-            getMessages: [...existingMessages.getMessages, sendMessage],
-          },
-        });
-      },
-    }
-  );
-
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [data]);
-  
-  useEffect(() => {
-    const unsubscribe = subscribeToMore({
-      document: NEW_MESSAGE_SUBSCRIPTION,
-      variables: { receiverId: currentUser._id },
-      updateQuery: (prev, { subscriptionData }) => {
-        if (!subscriptionData.data) return prev;
-        const newMessage = subscriptionData.data.newMessage;
-  
-        if (
-          newMessage.senderId === currentUser._id ||
-          newMessage.receiverId === currentUser._id
-        ) {
-          return {
-            ...prev,
-            getMessages: [...prev.getMessages, newMessage],
-          };
-        }
-        return prev;
-      },
-    });
-
-    // Store unsubscribe function in ref
-    unsubscribeRef.current = unsubscribe;
-  
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
-    };
-  }, [currentUser._id, subscribeToMore]);
-  
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -142,7 +58,6 @@ export function MessageInbox() {
   if (error) return <p>Error loading messages: {error.message}</p>;
 
   const messages = data?.getMessages || [];
-
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader className="flex flex-row items-center">

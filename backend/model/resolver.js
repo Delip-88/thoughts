@@ -13,8 +13,6 @@ import {
   getCommentsById,
 } from "../utils/functions.js";
 
-const NEW_MESSAGE="NEW_MESSAGE"
-
 const protectedRoute = async (context) => {
   const user = await resolvers.Query.checkAuth(null, null, context);
   if (!user) {
@@ -78,55 +76,26 @@ const resolvers = {
       try {
         // Validate user authentication if necessary
         // const user = await protectedRoute(context);
-    
+
         // Fetch messages where the sender and receiver match either way
         const messages = await Message.find({
-          $or: [ 
+          $or: [
             { senderId, receiverId },
             { senderId: receiverId, receiverId: senderId },
           ],
         }).sort({ createdAt: 1 }); // Sort messages by creation date (oldest to newest)
-    
+
         return messages; // Return the messages array
       } catch (err) {
         throw new Error(`Failed to fetch messages: ${err.message}`);
       }
     },
-    
   },
-
-  // Resolve `posts` for a User
-  User: {
-    async posts(parent) {
-      // Fetch posts where the author's ID matches the user's _id
-      return await Post.find({ author: parent._id });
-    },
-    async comments(parent) {
-      return await Comment.find({ userId: parent._id });
-    },
-  },
-
-  // Resolve `author` for a Post
-  Post: {
-    async author(parent) {
-      // Fetch the user (author) based on the authorId field in the post
-      return await User.findById(parent.author);
-    },
-    async comments(parent) {
-      return await Comment.find({ postId: parent._id });
-    },
-  },
-
-  Comment: {
-    async commentedBy(parent) {
-      return await User.findById(parent.userId);
-    },
-  },
+  
   Mutation: {
     async sendMessage(_, { receiverId, content }, context) {
       const user = await protectedRoute(context);
 
-      const {pubsub} = context
       try {
         const newMessage = new Message({
           senderId: user._id,
@@ -137,12 +106,6 @@ const resolvers = {
 
         const savedMessage = await newMessage.save();
 
-        // Publish the new message to a unique channel for the receiver
-        pubsub.publish(`${NEW_MESSAGE}_${receiverId}`, {
-          newMessage: savedMessage,
-        });
-
-        // Return the saved message
         return savedMessage;
       } catch (err) {
         throw new Error(`Failed to send message: ${err.message}`);
@@ -585,16 +548,33 @@ const resolvers = {
       return { message: "logged out sucessfully", success: true };
     },
   },
-  Subscription: {
-    newMessage: {
-      subscribe: async (_, { receiverId }, { pubsub }) => {
-        console.log("Subscribing to channel:", `${NEW_MESSAGE}_${receiverId}`);
-        return pubsub.asyncIterator(`${NEW_MESSAGE}_${receiverId}`);
-      },
+  // Resolve `posts` for a User
+  User: {
+    async posts(parent) {
+      // Fetch posts where the author's ID matches the user's _id
+      return await Post.find({ author: parent._id });
+    },
+    async comments(parent) {
+      return await Comment.find({ userId: parent._id });
     },
   },
-  
-  
+
+  // Resolve `author` for a Post
+  Post: {
+    async author(parent) {
+      // Fetch the user (author) based on the authorId field in the post
+      return await User.findById(parent.author);
+    },
+    async comments(parent) {
+      return await Comment.find({ postId: parent._id });
+    },
+  },
+
+  Comment: {
+    async commentedBy(parent) {
+      return await User.findById(parent.userId);
+    },
+  },
 };
 
 export default resolvers;

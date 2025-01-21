@@ -1,4 +1,4 @@
-export const typeDefs = `#graphql
+const typeDefs = `#graphql
     type User {
         _id: ID! 
         username: String!   # Non-nullable username
@@ -65,20 +65,27 @@ export const typeDefs = `#graphql
     type Mutation{
         addUser(user: userInput!): User
         deleteUser(id: ID!): Response!
+
         addPost(post: postInput!): Response!
         deletePost(id: ID!): Response!
+
         updateUser(user: updateUser!): Response!
         updatePost(post: updatePost!): Post
+
         addComment(postId: ID!, userId: ID!,content: String!): CommentResponse!
         deleteComment(commentId: ID!, postId: ID!):Response!
+
         likeOnPost(id: ID!): Response!
+
         login(usernameoremail: String!, password: String!): AuthPayload!
         logout: Response!
+
         register(user: userInput!): Response!
         verifyUser(email: String!,code: String!):AuthPayload!
         resendCode(email: String!): Response!
         passwordReset(email: String!): Response!
         newPassword(token: String!, password: String!): Response!
+
         getUploadSignature(tags: [String],upload_preset: String!, uploadFolder: String!): Signature!
         getDeleteSignature(publicId: String!): Signature!
 
@@ -92,9 +99,6 @@ export const typeDefs = `#graphql
         content: String!
         isRead: Boolean!
         createdAt: String!
-    }
-    type Subscription{
-        newMessage(receiverId: ID!): Message!
     }
 
     type Signature{
@@ -147,3 +151,6 @@ export const typeDefs = `#graphql
     }
 
 `;
+
+
+export default typeDefs

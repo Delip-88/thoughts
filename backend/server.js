@@ -4,57 +4,24 @@ import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import connectDb from "./config/db_config.js";
-import { typeDefs } from "./model/Schema.js";
 import resolvers from "./model/resolver.js";
+import typeDefs from "./model/Schema.js"
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { authenticate } from "./middleware/authenticate.js";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { v2 as cloudinary } from "cloudinary";
-import { createServer } from "http";
-import { useServer } from "graphql-ws/lib/use/ws";
-import { WebSocketServer } from "ws";
 import { makeExecutableSchema } from "@graphql-tools/schema";
-import Redis from "ioredis";
-import { RedisPubSub } from "graphql-redis-subscriptions";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Initialize RedisPubSub with added logging for Redis connection checks
-const redisPublisher = new Redis(process.env.REDIS_URL);
-const redisSubscriber = new Redis(process.env.REDIS_URL);
-const pubsub = new RedisPubSub({
-  publisher: redisPublisher,
-  subscriber: redisSubscriber,
-});
-
-// Log Redis connection status
-redisPublisher.on("connect", () =>
-  console.log("Connected to Redis for publisher")
-);
-redisSubscriber.on("connect", () =>
-  console.log("Connected to Redis for subscriber")
-);
-redisPublisher.on("error", (err) =>
-  console.error("Redis Publisher Error:", err)
-);
-redisSubscriber.on("error", (err) =>
-  console.error("Redis Subscriber Error:", err)
-);
-
-await redisPublisher.ping();
-await redisSubscriber.ping();
-console.log("Redis is ready.");
-
 // Middleware setup
 app.use(cookieParser());
-app.use(helmet()); // Security headers
-
-app.set("trust proxy", 1);
+app.use(helmet());
 
 // Rate Limiting Middleware for basic protection
 const limiter = rateLimit({
@@ -66,6 +33,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Cloudinary configuration
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.CLOUD_API_KEY,
@@ -74,66 +42,52 @@ cloudinary.config({
 
 // CORS configuration with environment-based origin control
 const corsOptions = {
-  origin: [process.env.CLIENT_URL],
+  origin: process.env.CLIENT_URL,
   credentials: true,
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 
-// Create schema from typeDefs and resolvers, including subscriptions
+// Create schema from typeDefs and resolvers
 const schema = makeExecutableSchema({
   typeDefs,
   resolvers,
 });
 
-// Create HTTP server for both HTTP and WebSocket support
-const httpServer = createServer(app);
-
-// Create Apollo Server instance with schema
+// Create Apollo Server instance
 const server = new ApolloServer({
   schema,
 });
 
+// Start the server
 const startServer = async () => {
   try {
     console.log("Starting server...");
 
+    // Start Apollo Server
     await server.start();
     console.log("Apollo Server started");
 
+    // Connect to MongoDB
     await connectDb();
     console.log("Database connected");
 
+    // Middleware for Apollo Server
     app.use(
       "/graphql",
       bodyParser.json(),
       authenticate,
       expressMiddleware(server, {
         context: async ({ req, res }) => {
-          return { req, res, pubsub };
+          return { req, res }; // Pass request and response objects to context
         },
       })
     );
 
-    const wsServer = new WebSocketServer({
-      server: httpServer,
-      path: "/graphql",
-    });
-
-    useServer(
-      {
-        schema,
-        context: async () => {
-          return { pubsub };
-        },
-      },
-      wsServer
-    );
-
-    httpServer.listen(port, () => {
+    // Start the HTTP server
+    app.listen(port, () => {
       console.log(`🚀 Server ready at http://localhost:${port}/graphql`);
-      console.log(`🚀 Subscriptions ready at ws://localhost:${port}/graphql`);
     });
   } catch (error) {
     console.error("Error starting server:", error);
